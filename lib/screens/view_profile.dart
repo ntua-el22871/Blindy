@@ -208,7 +208,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.of(context).pop();
+                    Navigator.of(context).pushReplacementNamed('/match');
                   },
                   child: const Text(
                     'PREV',

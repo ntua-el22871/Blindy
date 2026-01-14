@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'inbox.dart';
+import 'reveal_profile.dart';
+import '../services/storage_service.dart';
 
 class ChatScreen extends StatefulWidget {
   final String personName;
@@ -11,19 +13,44 @@ class ChatScreen extends StatefulWidget {
 }
 
 class _ChatScreenState extends State<ChatScreen> {
-  static const int messageLimit = 50; // ~2-3 days of chatting
   List<Map<String, String>> _messages = [];
   final TextEditingController _controller = TextEditingController();
-  int get messageCount => _messages.length;
-  bool get canReveal => messageCount >= messageLimit;
-  bool _revealed = false;
+
+  // Profile data for reveal functionality
+  final Map<String, Map<String, dynamic>> _profileData = {
+    'person1': {
+      'name': 'Anna, 24',
+      'location': 'Athens',
+      'bio': 'Loves books, hiking, and good coffee. Always up for a spontaneous adventure or a cozy café morning.',
+      'interests': ['Books', 'Hiking', 'Coffee', 'Travel', 'Art'],
+      'compatibility': 0.8,
+    },
+    'person2': {
+      'name': 'Maria, 27',
+      'location': 'Thessaloniki',
+      'bio': 'Art lover, movie buff, and foodie. I believe in living life to the fullest and enjoying every moment.',
+      'interests': ['Art', 'Movies', 'Food', 'Photography', 'Music'],
+      'compatibility': 0.6,
+    },
+    'person3': {
+      'name': 'Eleni, 22',
+      'location': 'Patras',
+      'bio': 'Enjoys gaming, music, and spending time with pets. Looking for someone who gets my gamer side.',
+      'interests': ['Gaming', 'Music', 'Pets', 'Technology', 'Anime'],
+      'compatibility': 0.9,
+    },
+    'person4': {
+      'name': 'Sofia, 29',
+      'location': 'Crete',
+      'bio': 'Traveler, gym enthusiast, and social butterfly. Let\'s explore new places and try new experiences together.',
+      'interests': ['Travel', 'Gym', 'Social', 'Cooking', 'Outdoors'],
+      'compatibility': 0.7,
+    },
+  };
 
   @override
   void initState() {
     super.initState();
-    // Load chat history from local storage or memory (for demo, just keep in memory)
-    // TODO: Implement persistent storage for real app
-    // For now, simulate with static map
     _messages = _chatHistories[widget.chatId] ?? [];
   }
 
@@ -33,20 +60,50 @@ class _ChatScreenState extends State<ChatScreen> {
     super.dispose();
   }
 
-  void _sendMessage(String text) {
+  void _sendMessage(String text) async {
     if (text.trim().isEmpty) return;
+
+    final currentUser = StorageService.getLoggedInUser();
+    if (currentUser == null) return;
+
+    // Add message to local UI
     setState(() {
       _messages.add({'sender': 'me', 'text': text});
       _chatHistories[widget.chatId] = _messages;
       _controller.clear();
     });
+
+    // Save message to Hive storage
+    await StorageService.sendMessage(currentUser, widget.personName, text);
+
+    // Simulate a response (optional)
+    Future.delayed(const Duration(seconds: 1), () {
+      if (mounted) {
+        setState(() {
+          _messages.add({
+            'sender': 'other',
+            'text': 'Thanks for the message! I\'ll get back to you soon 😊'
+          });
+        });
+      }
+    });
   }
 
-  void _reveal() {
-    if (canReveal) {
-      setState(() {
-        _revealed = true;
-      });
+  void _revealProfile() {
+    final profile = _profileData[widget.chatId];
+    if (profile != null) {
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (context) => RevealProfileScreen(
+            personName: profile['name'],
+            location: profile['location'],
+            bio: profile['bio'],
+            interests: List<String>.from(profile['interests']),
+            compatibility: profile['compatibility'],
+            chatId: widget.chatId,
+          ),
+        ),
+      );
     }
   }
 
@@ -121,49 +178,31 @@ class _ChatScreenState extends State<ChatScreen> {
                 ),
               ),
             ),
-            // Reveal button and message bar
+            // Reveal button
             Positioned(
               top: 110,
               left: 0,
               right: 0,
-              child: Column(
-                children: [
-                  ElevatedButton(
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: canReveal ? const Color(0xFFFFB7CD) : Colors.grey,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
+              child: Center(
+                child: ElevatedButton(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFFFB7CD),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
                     ),
-                    onPressed: canReveal ? _reveal : null,
-                    child: Text(
-                      _revealed ? 'Revealed!' : 'Reveal',
-                      style: const TextStyle(
-                        fontFamily: 'Roboto',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 18,
-                        color: Color(0xFF633B48),
-                      ),
+                    padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 10),
+                  ),
+                  onPressed: _revealProfile,
+                  child: const Text(
+                    'Reveal Profile',
+                    style: TextStyle(
+                      fontFamily: 'Roboto',
+                      fontWeight: FontWeight.w500,
+                      fontSize: 16,
+                      color: Color(0xFF633B48),
                     ),
                   ),
-                  const SizedBox(height: 8),
-                  Container(
-                    padding: const EdgeInsets.symmetric(vertical: 4, horizontal: 16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFD8E4),
-                      borderRadius: BorderRadius.circular(8),
-                    ),
-                    child: Text(
-                      'Messages sent: $messageCount / $messageLimit',
-                      style: const TextStyle(
-                        fontFamily: 'Roboto',
-                        fontWeight: FontWeight.w500,
-                        fontSize: 14,
-                        color: Color(0xFF633B48),
-                      ),
-                    ),
-                  ),
-                ],
+                ),
               ),
             ),
             // Chat messages

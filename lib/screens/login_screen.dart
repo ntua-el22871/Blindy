@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'profcreat_quiz.dart';
-import 'match_screen.dart';
+import 'credentials.dart';
 
 class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
@@ -123,23 +123,20 @@ class LoginScreen extends StatelessWidget {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Text(
-                            'Already have an account? ',
-                            style: const TextStyle(
-                              fontFamily: 'Inter',
-                              fontWeight: FontWeight.normal,
-                              fontSize: 13,
-                              color: Colors.white,
+                          Expanded(
+                            child: Text(
+                              'Already have an account? ',
+                              style: const TextStyle(
+                                fontFamily: 'Inter',
+                                fontWeight: FontWeight.normal,
+                                fontSize: 13,
+                                color: Colors.white,
+                              ),
                             ),
                           ),
                           GestureDetector(
                             onTap: () {
-                              Navigator.of(context).pushAndRemoveUntil(
-                                MaterialPageRoute(
-                                  builder: (context) => const MatchScreen(),
-                                ),
-                                (route) => false,
-                              );
+                              Navigator.of(context).push(MaterialPageRoute(builder: (context) => const CredentialsScreen(),));
                             },
                             child: const Text(
                               'Log in!',
@@ -175,7 +172,6 @@ class _BlindyButton extends StatelessWidget {
     required this.text,
     required this.icon,
     required this.onPressed,
-    super.key,
   });
 
   @override
@@ -215,3 +211,4 @@ class _BlindyButton extends StatelessWidget {
     );
   }
 }
+

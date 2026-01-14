@@ -319,7 +319,7 @@ class _FilterChip extends StatelessWidget {
 	final VoidCallback onTap;
 	final bool disabled;
 	final bool distinguish;
-	const _FilterChip({required this.label, required this.selected, required this.onTap, this.disabled = false, this.distinguish = false, super.key});
+	const _FilterChip({required this.label, required this.selected, required this.onTap, this.disabled = false, this.distinguish = false});
 
 	@override
 	Widget build(BuildContext context) {

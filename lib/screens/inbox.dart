@@ -8,10 +8,12 @@ class InboxScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final List<Map<String, String>> chats = [
-      {'name': 'Person 1', 'lastMessage': 'You: Hello!', 'chatId': 'person1'},
-      {'name': 'Person 2', 'lastMessage': 'Person 2: Hello!', 'chatId': 'person2'},
-      {'name': 'Person 3', 'lastMessage': 'Person 3: Hello!', 'chatId': 'person3'},
+      {'name': 'Anna, 24', 'lastMessage': 'You: Hello!', 'chatId': 'person1', 'location': 'Athens'},
+      {'name': 'Maria, 27', 'lastMessage': 'Maria: Hey there!', 'chatId': 'person2', 'location': 'Thessaloniki'},
+      {'name': 'Eleni, 22', 'lastMessage': 'You: Nice to meet you', 'chatId': 'person3', 'location': 'Patras'},
+      {'name': 'Sofia, 29', 'lastMessage': 'Sofia: Let\'s chat!', 'chatId': 'person4', 'location': 'Crete'},
     ];
+
     return Scaffold(
       body: Container(
         width: double.infinity,
@@ -38,101 +40,121 @@ class InboxScreen extends StatelessWidget {
               right: 0,
               child: Center(
                 child: Text(
-                  'Messages',
+                  'Inbox',
                   style: TextStyle(
                     fontFamily: 'Roboto',
                     fontWeight: FontWeight.w400,
                     fontSize: 40,
                     color: Colors.white,
+                    shadows: [
+                      Shadow(
+                        color: Colors.black.withOpacity(0.25),
+                        offset: const Offset(0, 4),
+                        blurRadius: 4,
+                      ),
+                    ],
                   ),
                 ),
               ),
             ),
-            // Chats
+            // Chats List
             Positioned.fill(
               top: 140,
-              child: ListView.separated(
+              bottom: 0,
+              child: ListView.builder(
                 itemCount: chats.length,
-                separatorBuilder: (_, __) => const SizedBox(height: 16),
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
                 itemBuilder: (context, idx) {
                   final chat = chats[idx];
-                  return GestureDetector(
-                    onTap: () {
-                      Navigator.of(context).push(
-                        MaterialPageRoute(
-                          builder: (context) => ChatScreen(
-                            personName: chat['name']!,
-                            chatId: chat['chatId']!,
+                  return Padding(
+                    padding: const EdgeInsets.only(bottom: 16),
+                    child: GestureDetector(
+                      onTap: () {
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => ChatScreen(
+                              personName: chat['name']!,
+                              chatId: chat['chatId']!,
+                            ),
                           ),
+                        );
+                      },
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF633B48),
+                          borderRadius: BorderRadius.circular(24),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withOpacity(0.15),
+                              blurRadius: 8,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
                         ),
-                      );
-                    },
-                    child: Container(
-                      margin: const EdgeInsets.symmetric(horizontal: 16),
-                      padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFF633B48),
-                        borderRadius: BorderRadius.circular(16),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.08),
-                            blurRadius: 6,
-                            offset: const Offset(0, 2),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-                            decoration: BoxDecoration(
-                              gradient: const LinearGradient(
-                                colors: [
-                                  Color(0xFFFF3131),
-                                  Color(0xFFBD5656),
-                                  Color(0xFFDA3838),
-                                  Color(0xFFFF0000),
-                                ],
-                                stops: [0.0, 0.2067, 0.7452, 1.0],
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            // Name with location
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: Text(
+                                    chat['name']!,
+                                    style: const TextStyle(
+                                      fontFamily: 'Roboto',
+                                      fontWeight: FontWeight.w500,
+                                      fontSize: 18,
+                                      color: Colors.white,
+                                    ),
+                                  ),
+                                ),
+                                Icon(
+                                  Icons.location_on,
+                                  color: Colors.white.withOpacity(0.7),
+                                  size: 16,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  chat['location']!,
+                                  style: TextStyle(
+                                    fontFamily: 'Roboto',
+                                    fontWeight: FontWeight.w400,
+                                    fontSize: 14,
+                                    color: Colors.white.withOpacity(0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                            const SizedBox(height: 10),
+                            // Last message
+                            Container(
+                              padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFD8E4),
+                                borderRadius: BorderRadius.circular(12),
                               ),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              chat['name']!,
-                              style: const TextStyle(
-                                fontFamily: 'Roboto',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 18,
-                                color: Colors.white,
-                              ),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            padding: const EdgeInsets.symmetric(vertical: 2, horizontal: 8),
-                            decoration: BoxDecoration(
-                              color: const Color(0xFFFFD8E4),
-                              borderRadius: BorderRadius.circular(8),
-                            ),
-                            child: Text(
-                              chat['lastMessage']!,
-                              style: const TextStyle(
-                                fontFamily: 'Roboto',
-                                fontWeight: FontWeight.w500,
-                                fontSize: 14,
-                                color: Color(0xFF633B48),
+                              child: Text(
+                                chat['lastMessage']!,
+                                style: const TextStyle(
+                                  fontFamily: 'Roboto',
+                                  fontWeight: FontWeight.w400,
+                                  fontSize: 13,
+                                  color: Color(0xFF633B48),
+                                ),
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
                               ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
                     ),
                   );
                 },
               ),
             ),
-            // Prev button
+            // Previous button
             Positioned(
               top: 20,
               left: 20,
