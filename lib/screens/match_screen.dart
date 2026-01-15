@@ -1,12 +1,10 @@
 import 'package:flutter/material.dart';
 import 'dart:math';
 
-// Imports των άλλων οθονών
+// Imports
 import 'view_profile.dart'; 
-import 'chat_screen.dart'; 
+import 'inbox.dart'; 
 import 'login_screen.dart'; 
-
-// import '../services/storage_service.dart';
 
 class MatchScreen extends StatefulWidget {
   const MatchScreen({super.key});
@@ -34,11 +32,9 @@ class _MatchScreenState extends State<MatchScreen> {
       await Future.delayed(const Duration(milliseconds: 500));
       _currentUser = StorageService.getLoggedInUser();
       
-      // Παίρνουμε τα δεδομένα (μπορεί να είναι dynamic)
       final rawProfiles = await StorageService.getAllProfiles();
       
-      // --- ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ TYPE ERROR (Screenshot 2) ---
-      // Μετατρέπουμε ρητά κάθε στοιχείο σε Map<String, dynamic>
+      // Διόρθωση List<Map>
       final List<Map<String, dynamic>> safeProfiles = rawProfiles.map((profile) {
         return Map<String, dynamic>.from(profile as Map);
       }).toList();
@@ -59,9 +55,7 @@ class _MatchScreenState extends State<MatchScreen> {
     }
   }
 
-  // --- LOGOUT FUNCTION ---
   void _logout() {
-    // Πλοήγηση στο Login και διαγραφή του ιστορικού
     Navigator.of(context).pushAndRemoveUntil(
       MaterialPageRoute(builder: (context) => const LoginScreen()),
       (route) => false,
@@ -98,9 +92,8 @@ class _MatchScreenState extends State<MatchScreen> {
       final profileId = currentProfile['id'] ?? _currentIndex.toString();
 
       await StorageService.likeProfile(_currentUser!, profileId);
-      bool isMatch = StorageService.checkMatch(_currentUser!, profileId);
       
-      if (isMatch && mounted) {
+      if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text('It\'s a Match! 🎉'),
@@ -140,7 +133,6 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
           child: Stack(
             children: [
-               // Logout Button όταν είναι άδεια η λίστα
                Positioned(
                 top: 60, right: 24,
                 child: IconButton(
@@ -183,7 +175,7 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
           child: Stack(
             children: [
-              // --- TOP BAR ---
+              // TOP BAR
               Positioned(
                 top: 60, left: 0, right: 0,
                 child: Padding(
@@ -191,7 +183,8 @@ class _MatchScreenState extends State<MatchScreen> {
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      // Profile Icon (Left)
+                      // --- ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΛΕΙΔΙ ---
+                      // Χρησιμοποιούμε PUSH για να ανοίξουμε το προφίλ χωρίς να χάσουμε το MatchScreen
                       GestureDetector(
                         onTap: () {
                           Navigator.of(context).push(
@@ -201,26 +194,18 @@ class _MatchScreenState extends State<MatchScreen> {
                         child: const Icon(Icons.person_outline, color: Colors.white, size: 32),
                       ),
                       
-                      // Title (Center)
                       const Text(
                         'Matches',
                         style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 40, color: Colors.white),
                       ),
                       
-                      // Chat & Logout Icons (Right)
                       Row(
                         children: [
                           GestureDetector(
-                            // --- ΔΙΟΡΘΩΣΗ ΓΙΑ ΤΟ CHAT SCREEN (Screenshot 5) ---
-                            // Επειδή το ChatScreen σου ζητάει ορίσματα, δίνουμε dummy τιμές
-                            // για να ανοίξει η σελίδα χωρίς errors.
                             onTap: () {
                                Navigator.of(context).push(
                                  MaterialPageRoute(
-                                   builder: (context) => const ChatScreen(
-                                     personName: "Inbox", // Ή βάλε "Matches"
-                                     chatId: "general_inbox",
-                                   ),
+                                   builder: (context) => const Inbox(), 
                                  ),
                                );
                             },
@@ -238,7 +223,7 @@ class _MatchScreenState extends State<MatchScreen> {
                 ),
               ),
 
-              // --- MATCH CARD ---
+              // CARD
               Center(
                 child: Container(
                   margin: const EdgeInsets.only(top: 80),
@@ -273,27 +258,6 @@ class _MatchScreenState extends State<MatchScreen> {
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
                         child: Text(profile['bio'] ?? '', maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 16, color: Colors.white)),
                       ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                        child: Text('Interests:', style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white.withOpacity(0.9))),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                        child: Wrap(
-                          spacing: 8, runSpacing: 4,
-                          children: List.generate(interests.length, (i) => Chip(label: Text(interests[i].toString(), style: const TextStyle(color: Color(0xFF633B48))), backgroundColor: Colors.white)),
-                        ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                        child: Row(
-                          children: [
-                            Expanded(child: LinearProgressIndicator(value: compatibility, minHeight: 12, backgroundColor: Colors.white.withOpacity(0.2), valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF6171)), borderRadius: BorderRadius.circular(8))),
-                            const SizedBox(width: 12),
-                            Text('${(compatibility * 100).toInt()}%', style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white)),
-                          ],
-                        ),
-                      ),
                       const Spacer(),
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
@@ -319,17 +283,26 @@ class _MatchScreenState extends State<MatchScreen> {
   }
 }
 
-// --- MOCK DATA / Storage Service ---
-// Αν έχεις δικό σου αρχείο storage_service.dart, ΣΒΗΣΕ ΤΗΝ ΠΑΡΑΚΑΤΩ ΚΛΑΣΗ
-// και κάνε uncomment το import στην κορυφή.
+// STORAGE SERVICE
 class StorageService {
   static String getLoggedInUser() => "user123";
+  
   static Future<List<dynamic>> getAllProfiles() async {
     return [
       {'id': '1', 'name': 'Maria', 'age': '24', 'location': 'Athens', 'bio': 'Coffee & Art.', 'interests': ['Art', 'Coffee'], 'compatibility': 0.85},
-      {'id': '2', 'name': 'Eleni', 'age': '22', 'location': 'Thessaloniki', 'bio': 'Hiking lover.', 'interests': ['Hiking', 'Pets'], 'compatibility': 0.65}
+      {'id': '2', 'name': 'Eleni', 'age': '22', 'location': 'Thessaloniki', 'bio': 'Hiking lover.', 'interests': ['Hiking', 'Pets'], 'compatibility': 0.65},
+      {'id': '3', 'name': 'Anna', 'age': '25', 'location': 'Patras', 'bio': 'Travel & Music.', 'interests': ['Music', 'Travel'], 'compatibility': 0.90}
     ];
   }
+
+  static Future<List<Map<String, String>>> getMatches() async {
+    await Future.delayed(const Duration(milliseconds: 300));
+    return [
+      {'name': 'Anna, 25', 'lastMessage': 'You: Hello!', 'chatId': 'person1', 'location': 'Patras'},
+      {'name': 'Maria, 24', 'lastMessage': 'Maria: Hey there!', 'chatId': 'person2', 'location': 'Athens'},
+    ];
+  }
+
   static Future<void> likeProfile(String u, String p) async {}
   static bool checkMatch(String u, String p) => true; 
 }

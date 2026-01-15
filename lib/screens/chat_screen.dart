@@ -145,7 +145,7 @@ class _ChatScreenState extends State<ChatScreen> {
                   onPressed: () {
                     Navigator.of(context).pushAndRemoveUntil(
                       MaterialPageRoute(
-                        builder: (context) => const InboxScreen(),
+                        builder: (context) => const Inbox(),
                       ),
                       (route) => false,
                     );

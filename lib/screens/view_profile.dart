@@ -76,7 +76,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         _interests = profile.interests;
       });
     } else {
-      // Defaults for first time
+      // Defaults
       setState(() {
         _nameController.text = '';
         _ageController.text = '';
@@ -168,7 +168,6 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Ensure gender and attractedTo are valid
     if (!_genderOptions.contains(_gender)) {
       _gender = _genderOptions.first;
     }
@@ -194,6 +193,8 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         ),
         child: Stack(
           children: [
+            // --- ΤΟ ΚΟΥΜΠΙ PREV ---
+            // Χρησιμοποιούμε pop για να γυρίσουμε πίσω
             Positioned(
               top: 20,
               left: 20,
@@ -208,7 +209,8 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                     ),
                   ),
                   onPressed: () {
-                    Navigator.of(context).pushReplacementNamed('/match');
+                    // ΕΠΙΣΤΡΟΦΗ ΧΩΡΙΣ RESET
+                    Navigator.of(context).pop();
                   },
                   child: const Text(
                     'PREV',
@@ -222,6 +224,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                 ),
               ),
             ),
+            
             Positioned(
               top: 80,
               left: 0,
@@ -238,6 +241,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                 ),
               ),
             ),
+            
             Center(
               child: SingleChildScrollView(
                 child: Container(
