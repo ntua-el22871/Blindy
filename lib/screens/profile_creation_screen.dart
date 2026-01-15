@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
 import 'match_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class ProfileCreationScreen extends StatefulWidget {
   final String username;
@@ -23,7 +26,8 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
 
   String? _selectedGender;
   String? _selectedAttraction;
-  List<String> _selectedInterests = [];
+  final List<String> _selectedInterests = [];
+  final List<String> _photos = [];
   bool _isSaving = false;
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
@@ -71,6 +75,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       'bio': _bioController.text.trim(),
       'location': _locationController.text.trim(),
       'interests': _selectedInterests,
+      'photos': _photos,
       'profileCompleted': true,
     });
 
@@ -85,6 +90,18 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (_) => const MatchScreen()),
       );
+    }
+  }
+
+  void _addPhoto() async {
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      final bytes = await pickedFile.readAsBytes();
+      final base64String = base64Encode(bytes);
+      setState(() {
+        _photos.add(base64String);
+      });
     }
   }
 
@@ -159,28 +176,41 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
                 _buildTextField(_bioController, 'Tell us about yourself', maxLines: 3),
                 const SizedBox(height: 20),
 
-                // Photos placeholder
+                // Photos field
                 _buildLabel('Add Photos:'),
                 const SizedBox(height: 8),
-                Container(
-                  width: double.infinity,
-                  height: 100,
-                  decoration: BoxDecoration(
-                    border: Border.all(color: Colors.white54, width: 2),
-                    borderRadius: BorderRadius.circular(12),
-                    color: Colors.white.withOpacity(0.1),
-                  ),
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.add_a_photo, color: Colors.white70, size: 32),
-                      const SizedBox(height: 8),
-                      const Text(
-                        'Photo upload coming soon',
-                        style: TextStyle(color: Colors.white70, fontSize: 14),
+                Wrap(
+                  spacing: 8,
+                  children: [
+                    ..._photos.map((photo) => Container(
+                          width: 80,
+                          height: 80,
+                          decoration: BoxDecoration(
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Image.memory(
+                            base64Decode(photo),
+                            fit: BoxFit.cover,
+                          ),
+                        )),
+                    GestureDetector(
+                      onTap: _addPhoto,
+                      child: Container(
+                        width: 80,
+                        height: 80,
+                        decoration: BoxDecoration(
+                          border: Border.all(color: Colors.white54, width: 2),
+                          borderRadius: BorderRadius.circular(12),
+                          color: Colors.white.withOpacity(0.1),
+                        ),
+                        child: const Icon(
+                          Icons.add_a_photo,
+                          color: Colors.white70,
+                          size: 32,
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
                 const SizedBox(height: 20),
 

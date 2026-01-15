@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class RevealProfileScreen extends StatefulWidget {
   final String userId;
@@ -205,23 +207,40 @@ class _RevealProfileScreenState extends State<RevealProfileScreen> {
                         ),
                       ),
                       const SizedBox(height: 4),
-                      Container(
-                        height: 200,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFFB7CD),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: const Center(
-                          child: Text(
-                            'No photos uploaded yet',
-                            style: TextStyle(
-                              color: Color(0xFF633B48),
-                              fontSize: 18,
-                              fontFamily: 'Roboto',
+                      (_profile!['photos'] as List<dynamic>? ?? []).isEmpty
+                          ? Container(
+                              height: 200,
+                              decoration: BoxDecoration(
+                                color: const Color(0xFFFFB7CD),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Center(
+                                child: Text(
+                                  'No photos uploaded yet',
+                                  style: TextStyle(
+                                    color: Color(0xFF633B48),
+                                    fontSize: 18,
+                                    fontFamily: 'Roboto',
+                                  ),
+                                ),
+                              ),
+                            )
+                          : Wrap(
+                              spacing: 8,
+                              children: (_profile!['photos'] as List<dynamic>)
+                                  .map((photo) => Container(
+                                        width: 100,
+                                        height: 100,
+                                        decoration: BoxDecoration(
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Image.memory(
+                                          base64Decode(photo.toString()),
+                                          fit: BoxFit.cover,
+                                        ),
+                                      ))
+                                  .toList(),
                             ),
-                          ),
-                        ),
-                      ),
                     ],
                   ),
                 ),

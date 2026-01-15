@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
 import 'match_screen.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:convert';
+import 'dart:typed_data';
 
 class ViewProfileScreen extends StatefulWidget {
   const ViewProfileScreen({super.key});
@@ -16,6 +19,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   String _gender = 'Male';
   String _attraction = 'Female';
   List<String> _interests = [];
+  List<String> _photos = [];
 
   final List<String> _genderOptions = ['Male', 'Female', 'Other'];
   final List<String> _attractionOptions = ['Male', 'Female', 'Other'];
@@ -44,6 +48,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         _bioController.text = userProfile['bio'] ?? '';
         _locationController.text = userProfile['location'] ?? '';
         _interests = List<String>.from(userProfile['interests'] ?? []);
+        _photos = List<String>.from(userProfile['photos'] ?? []);
       });
     }
   }
@@ -61,6 +66,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
       'bio': _bioController.text.trim(),
       'location': _locationController.text.trim(),
       'interests': _interests,
+      'photos': _photos,
       'profileCompleted': true,
     });
 
@@ -68,6 +74,23 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved!')),
       );
+    }
+  }
+
+  void _addPhoto() async {
+    print('Add photo pressed');
+    final picker = ImagePicker();
+    final pickedFile = await picker.pickImage(source: ImageSource.gallery);
+    if (pickedFile != null) {
+      print('Picked file');
+      final bytes = await pickedFile.readAsBytes();
+      final base64String = base64Encode(bytes);
+      setState(() {
+        _photos.add(base64String);
+      });
+      _saveProfile(); // Save immediately
+    } else {
+      print('No file picked');
     }
   }
 
@@ -166,6 +189,9 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                 behavior: HitTestBehavior.opaque,
                 onTap: () {
                   print('Back button tapped');
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Back button tapped')),
+                  );
                   Navigator.of(context).pop();
                 },
                 child: Container(
@@ -240,6 +266,35 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                             label: const Text('Edit', style: TextStyle(color: Colors.white)),
                             backgroundColor: const Color(0xFFBD5656),
                             onPressed: _editInterests,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 16),
+                      const Text('Photos', style: TextStyle(
+                        fontFamily: 'Roboto',
+                        fontWeight: FontWeight.w500,
+                        fontSize: 18,
+                        color: Colors.white70,
+                      )),
+                      const SizedBox(height: 4),
+                      Wrap(
+                        spacing: 8,
+                        children: [
+                          ..._photos.map((photo) => Container(
+                                width: 100,
+                                height: 100,
+                                decoration: BoxDecoration(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Image.memory(
+                                  base64Decode(photo),
+                                  fit: BoxFit.cover,
+                                ),
+                              )),
+                          ActionChip(
+                            label: const Text('Add Photo', style: TextStyle(color: Colors.white)),
+                            backgroundColor: const Color(0xFFBD5656),
+                            onPressed: _addPhoto,
                           ),
                         ],
                       ),
