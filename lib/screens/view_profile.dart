@@ -162,23 +162,24 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
             Positioned(
               top: 20,
               left: 20,
-              child: Material(
-                color: Colors.transparent,
-                child: InkWell(
-                  onTap: () => Navigator.of(context).pushReplacement(
-                    MaterialPageRoute(builder: (context) => const MatchScreen()),
+              child: GestureDetector(
+                behavior: HitTestBehavior.opaque,
+                onTap: () {
+                  print('Back button tapped');
+                  Navigator.of(context).pop();
+                },
+                child: Container(
+                  width: 40,
+                  height: 40,
+                  padding: const EdgeInsets.all(8),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFFB7CD),
+                    borderRadius: BorderRadius.circular(12),
                   ),
-                  child: Container(
-                    padding: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFFFB7CD),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.arrow_back,
-                      color: Color(0xFF633B48),
-                      size: 20,
-                    ),
+                  child: const Icon(
+                    Icons.arrow_back,
+                    color: Color(0xFF633B48),
+                    size: 20,
                   ),
                 ),
               ),

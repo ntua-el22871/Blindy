@@ -144,6 +144,7 @@ class _MatchScreenState extends State<MatchScreen> {
                         ),
                         PopupMenuItem<String>(
                           value: 'logout',
+                          onTap: _logout,
                           child: Row(
                             children: const [
                               Icon(Icons.logout, color: Colors.red, size: 20),
@@ -151,7 +152,6 @@ class _MatchScreenState extends State<MatchScreen> {
                               Text('Logout', style: TextStyle(color: Colors.red)),
                             ],
                           ),
-                          onTap: _logout,
                         ),
                       ],
                     ),
@@ -282,11 +282,13 @@ class _MatchScreenState extends State<MatchScreen> {
               FloatingActionButton(
                 onPressed: () => _onSwipe(false),
                 backgroundColor: Colors.grey[300],
+                heroTag: 'dislike',
                 child: const Icon(Icons.close, color: Colors.red, size: 28),
               ),
               FloatingActionButton(
                 onPressed: () => _onSwipe(true),
                 backgroundColor: Colors.green[300],
+                heroTag: 'like',
                 child: const Icon(Icons.favorite, color: Colors.white, size: 28),
               ),
             ],

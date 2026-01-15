@@ -249,6 +249,7 @@ class _ChatScreenState extends State<ChatScreen> {
                     FloatingActionButton(
                       onPressed: _sendMessage,
                       backgroundColor: const Color(0xFFFFB7CD),
+                      heroTag: 'send',
                       child: const Icon(
                         Icons.send,
                         color: Color(0xFF633B48),
