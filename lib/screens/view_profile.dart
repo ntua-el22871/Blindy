@@ -1,39 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert';
-
-class UserProfile {
-  String name;
-  String age;
-  String gender;
-  String attractedTo;
-  String bio;
-  List<String> interests;
-  UserProfile({
-    required this.name,
-    required this.age,
-    required this.gender,
-    required this.attractedTo,
-    required this.bio,
-    required this.interests,
-  });
-  Map<String, dynamic> toJson() => {
-    'name': name,
-    'age': age,
-    'gender': gender,
-    'attractedTo': attractedTo,
-    'bio': bio,
-    'interests': interests,
-  };
-  static UserProfile fromJson(Map<String, dynamic> json) => UserProfile(
-    name: json['name'] ?? '',
-    age: json['age'] ?? '',
-    gender: json['gender'] ?? '',
-    attractedTo: json['attractedTo'] ?? '',
-    bio: json['bio'] ?? '',
-    interests: List<String>.from(json['interests'] ?? []),
-  );
-}
+import '../services/storage_service.dart';
 
 class ViewProfileScreen extends StatefulWidget {
   const ViewProfileScreen({super.key});
@@ -45,14 +11,16 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _ageController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
-  String _gender = 'Female';
-  String _attractedTo = 'Male';
+  final TextEditingController _locationController = TextEditingController();
+  String _gender = 'Male';
+  String _attraction = 'Female';
   List<String> _interests = [];
 
-  final List<String> _genderOptions = ['Female', 'Male', 'Other'];
-  final List<String> _attractedToOptions = ['Female', 'Male', 'Other'];
+  final List<String> _genderOptions = ['Male', 'Female', 'Other'];
+  final List<String> _attractionOptions = ['Male', 'Female', 'Other'];
   final List<String> _allInterests = [
-    'Books', 'Hiking', 'Coffee', 'Art', 'Movies', 'Food', 'Gaming', 'Music', 'Pets', 'Travel', 'Gym', 'Social'
+    'Movies', 'Theater', 'Pets', 'Art', 'Sports', 'Hiking', 'Opera', 'Gaming',
+    'Gym', 'Computers', 'Cooking', 'Books', 'Music', 'Series', 'Social'
   ];
 
   @override
@@ -61,44 +29,40 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
     _loadProfile();
   }
 
-  Future<void> _loadProfile() async {
-    final prefs = await SharedPreferences.getInstance();
-    final jsonStr = prefs.getString('user_profile');
-    if (jsonStr != null) {
-      final data = json.decode(jsonStr);
-      final profile = UserProfile.fromJson(data);
+  void _loadProfile() {
+    final loggedInUser = StorageService.getLoggedInUser();
+    if (loggedInUser != null) {
+      final userProfiles = StorageService.appData.get('userProfiles') ?? {};
+      final userProfile = userProfiles[loggedInUser] ?? {};
+      
       setState(() {
-        _nameController.text = profile.name;
-        _ageController.text = profile.age;
-        _gender = profile.gender;
-        _attractedTo = profile.attractedTo;
-        _bioController.text = profile.bio;
-        _interests = profile.interests;
-      });
-    } else {
-      // Defaults
-      setState(() {
-        _nameController.text = '';
-        _ageController.text = '';
-        _gender = 'Female';
-        _attractedTo = 'Male';
-        _bioController.text = '';
-        _interests = [];
+        _nameController.text = userProfile['name'] ?? '';
+        _ageController.text = userProfile['age'] ?? '';
+        _gender = userProfile['gender'] ?? 'Male';
+        _attraction = userProfile['attraction'] ?? 'Female';
+        _bioController.text = userProfile['bio'] ?? '';
+        _locationController.text = userProfile['location'] ?? '';
+        _interests = List<String>.from(userProfile['interests'] ?? []);
       });
     }
   }
 
-  Future<void> _saveProfile() async {
-    final profile = UserProfile(
-      name: _nameController.text,
-      age: _ageController.text,
-      gender: _gender,
-      attractedTo: _attractedTo,
-      bio: _bioController.text,
-      interests: _interests,
-    );
-    final prefs = await SharedPreferences.getInstance();
-    await prefs.setString('user_profile', json.encode(profile.toJson()));
+  void _saveProfile() async {
+    final loggedInUser = StorageService.getLoggedInUser();
+    if (loggedInUser == null) return;
+
+    await StorageService.updateProfile(loggedInUser, {
+      'id': loggedInUser,
+      'name': _nameController.text.trim(),
+      'age': _ageController.text.trim(),
+      'gender': _gender,
+      'attraction': _attraction,
+      'bio': _bioController.text.trim(),
+      'location': _locationController.text.trim(),
+      'interests': _interests,
+      'profileCompleted': true,
+    });
+
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Profile saved!')),
@@ -129,9 +93,9 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                       backgroundColor: const Color(0xFF633B48),
                       onSelected: (val) {
                         setStateDialog(() {
-                          if (val && temp.length < 6) {
+                          if (val) {
                             temp.add(interest);
-                          } else if (!val) {
+                          } else {
                             temp.remove(interest);
                           }
                         });
@@ -171,8 +135,8 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
     if (!_genderOptions.contains(_gender)) {
       _gender = _genderOptions.first;
     }
-    if (!_attractedToOptions.contains(_attractedTo)) {
-      _attractedTo = _attractedToOptions.first;
+    if (!_attractionOptions.contains(_attraction)) {
+      _attraction = _attractionOptions.first;
     }
     return Scaffold(
       body: Container(
@@ -193,8 +157,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         ),
         child: Stack(
           children: [
-            // --- ΤΟ ΚΟΥΜΠΙ PREV ---
-            // Χρησιμοποιούμε pop για να γυρίσουμε πίσω
+            // --- PREV BUTTON ---
             Positioned(
               top: 20,
               left: 20,
@@ -208,10 +171,7 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                       borderRadius: BorderRadius.circular(12),
                     ),
                   ),
-                  onPressed: () {
-                    // ΕΠΙΣΤΡΟΦΗ ΧΩΡΙΣ RESET
-                    Navigator.of(context).pop();
-                  },
+                  onPressed: () => Navigator.of(context).pop(),
                   child: const Text(
                     'PREV',
                     style: TextStyle(
@@ -259,9 +219,11 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
                       const SizedBox(height: 16),
                       _editableField('Age', _ageController, isNumber: true),
                       const SizedBox(height: 16),
+                      _editableField('Location', _locationController),
+                      const SizedBox(height: 16),
                       _dropdownField('Gender', _gender, _genderOptions, (val) => setState(() => _gender = val)),
                       const SizedBox(height: 16),
-                      _dropdownField('Attracted To', _attractedTo, _attractedToOptions, (val) => setState(() => _attractedTo = val)),
+                      _dropdownField('Attracted To', _attraction, _attractionOptions, (val) => setState(() => _attraction = val)),
                       const SizedBox(height: 16),
                       _editableField('Bio', _bioController, maxLines: 3),
                       const SizedBox(height: 16),

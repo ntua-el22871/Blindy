@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'match_screen.dart'; // Import για το StorageService
-import 'chat_screen.dart';  // Import για το Chat
+import '../services/storage_service.dart';
+import 'chat_screen.dart';
+import 'match_screen.dart';
 
 class Inbox extends StatefulWidget {
   const Inbox({super.key});
@@ -20,9 +21,7 @@ class _InboxState extends State<Inbox> {
   }
 
   Future<void> _loadMatches() async {
-    // Καλούμε τη μέθοδο από το StorageService
-    final matches = await StorageService.getMatches();
-    
+    final matches = await StorageService.getMatchesForInbox();
     if (mounted) {
       setState(() {
         _matches = matches;
@@ -35,119 +34,183 @@ class _InboxState extends State<Inbox> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
+            colors: [Color(0xFFFF3131), Color(0xFFFF0000)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF3131),
-              Color(0xFFBD5656),
-              Color(0xFFDA3838),
-              Color(0xFFFF0000),
-            ],
-            stops: [0.0, 0.2067, 0.7452, 1.0],
           ),
         ),
-        child: Stack(
-          children: [
-            // Τίτλος
-            Positioned(
-              top: 60, left: 0, right: 0,
-              child: Center(
+        child: SafeArea(
+          child: Column(
+            children: [
+              // Header
+              Padding(
+                padding: const EdgeInsets.all(20),
                 child: Text(
-                  'Matches',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 40,
+                  "Messages",
+                  style: Theme.of(context).textTheme.displayLarge?.copyWith(
                     color: Colors.white,
-                    shadows: [Shadow(color: Colors.black.withOpacity(0.25), offset: const Offset(0, 4), blurRadius: 4)],
+                    fontSize: 57,
+                    fontWeight: FontWeight.bold,
                   ),
                 ),
               ),
-            ),
-            
-            // Λίστα
-            Positioned.fill(
-              top: 140, bottom: 0,
-              child: _isLoading 
-                  ? const Center(child: CircularProgressIndicator(color: Colors.white))
-                  : _matches.isEmpty 
-                      ? const Center(child: Text("No matches yet!", style: TextStyle(color: Colors.white, fontSize: 18)))
-                      : ListView.builder(
-                          itemCount: _matches.length,
-                          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-                          itemBuilder: (context, idx) {
-                            final chat = _matches[idx];
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 16),
-                              child: GestureDetector(
-                                onTap: () {
-                                  // Εδώ περνάμε τα ορίσματα που ζητάει το ChatScreen σου
-                                  Navigator.of(context).push(
-                                    MaterialPageRoute(
-                                      builder: (context) => ChatScreen(
-                                        personName: chat['name']!,
-                                        chatId: chat['chatId']!,
-                                      ),
-                                    ),
-                                  );
-                                },
-                                child: Container(
-                                  padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 16),
-                                  decoration: BoxDecoration(
-                                    color: const Color(0xFF633B48),
-                                    borderRadius: BorderRadius.circular(24),
-                                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 8, offset: const Offset(0, 4))],
-                                  ),
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Row(
-                                        children: [
-                                          Expanded(
-                                            child: Text(chat['name']!, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, fontSize: 18, color: Colors.white)),
-                                          ),
-                                          Icon(Icons.location_on, color: Colors.white.withOpacity(0.7), size: 16),
-                                          const SizedBox(width: 4),
-                                          Text(chat['location']!, style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 14, color: Colors.white.withOpacity(0.7))),
-                                        ],
-                                      ),
-                                      const SizedBox(height: 10),
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 12),
-                                        decoration: BoxDecoration(color: const Color(0xFFFFD8E4), borderRadius: BorderRadius.circular(12)),
-                                        child: Text(chat['lastMessage']!, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 13, color: Color(0xFF633B48)), maxLines: 2, overflow: TextOverflow.ellipsis),
-                                      ),
-                                    ],
-                                  ),
+              // Loading state
+              if (_isLoading)
+                const Expanded(
+                  child: Center(child: CircularProgressIndicator()),
+                )
+              else if (_matches.isEmpty)
+                Expanded(
+                  child: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        const Text(
+                          "No matches yet!",
+                          style: TextStyle(
+                            fontSize: 20,
+                            color: Colors.white70,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                        const SizedBox(height: 24),
+                        ElevatedButton.icon(
+                          onPressed: () {
+                            Navigator.of(context).pushReplacement(
+                              MaterialPageRoute(builder: (context) => const MatchScreen()),
+                            );
+                          },
+                          icon: const Icon(Icons.favorite),
+                          label: const Text("Go Swipe"),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFFFB7CD),
+                            foregroundColor: const Color(0xFF633B48),
+                            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                )
+              else
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: _matches.length,
+                    padding: const EdgeInsets.all(16),
+                    itemBuilder: (context, index) {
+                      final match = _matches[index];
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: GestureDetector(
+                          onTap: () {
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (context) => ChatScreen(
+                                  personName: match['name']!,
+                                  chatId: match['chatId']!,
                                 ),
                               ),
                             );
                           },
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF633B48),
+                              borderRadius: BorderRadius.circular(12),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.2),
+                                  blurRadius: 4,
+                                  offset: const Offset(0, 2),
+                                ),
+                              ],
+                            ),
+                            child: Padding(
+                              padding: const EdgeInsets.all(16),
+                              child: Row(
+                                children: [
+                                  // Avatar
+                                  Container(
+                                    width: 56,
+                                    height: 56,
+                                    decoration: BoxDecoration(
+                                      color: const Color(0xFFFFB7CD),
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: Center(
+                                      child: Text(
+                                        match['name']!.isEmpty
+                                            ? '?'
+                                            : match['name']![0].toUpperCase(),
+                                        style: const TextStyle(
+                                          fontSize: 24,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF633B48),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 16),
+                                  // Message info
+                                  Expanded(
+                                    child: Column(
+                                      crossAxisAlignment: CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          match['name'] ?? 'Unknown',
+                                          style: const TextStyle(
+                                            fontSize: 16,
+                                            fontWeight: FontWeight.bold,
+                                            color: Colors.white,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                            horizontal: 12,
+                                            vertical: 6,
+                                          ),
+                                          decoration: BoxDecoration(
+                                            color: const Color(0xFFFFB7CD),
+                                            borderRadius: BorderRadius.circular(16),
+                                          ),
+                                          child: Text(
+                                            match['lastMessage'] ?? '',
+                                            style: const TextStyle(
+                                              fontSize: 12,
+                                              color: Color(0xFF633B48),
+                                              fontWeight: FontWeight.w500,
+                                            ),
+                                            maxLines: 1,
+                                            overflow: TextOverflow.ellipsis,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                  // Location
+                                  Text(
+                                    match['location'] ?? '',
+                                    style: const TextStyle(
+                                      fontSize: 12,
+                                      color: Colors.white70,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                          ),
                         ),
-            ),
-            
-            // Κουμπί Πίσω
-            Positioned(
-              top: 20, left: 20,
-              child: SizedBox(
-                width: 77, height: 32,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(backgroundColor: const Color(0xFFFFB7CD), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
-                  onPressed: () {
-                    Navigator.of(context).pushAndRemoveUntil(
-                      MaterialPageRoute(builder: (context) => const MatchScreen()),
-                      (route) => false,
-                    );
-                  },
-                  child: const Text('PREV', style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, fontSize: 14, color: Color(0xFF633B48))),
+                      );
+                    },
+                  ),
                 ),
-              ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
     );

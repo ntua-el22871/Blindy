@@ -1,21 +1,23 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
-// Imports των οθονών σου
+// Imports των οθονών σου (Όπως τα είχες)
 import 'screens/login_screen.dart';
 import 'screens/match_screen.dart';
 import 'screens/view_profile.dart';
 import 'screens/credentials.dart';
 import 'screens/profcreat_quiz.dart';
 import 'screens/sign_up_screen.dart';
+// import 'screens/inbox.dart'; // Αν χρειαστείς route και για το inbox
 
 void main() async {
+  // Εξασφαλίζουμε ότι τα Widgets έχουν φορτώσει
   WidgetsFlutterBinding.ensureInitialized();
   
-  // Initialize Hive
+  // 1. Αρχικοποίηση Hive
   await Hive.initFlutter();
   
-  // Open the appData box
+  // 2. Άνοιγμα του κουτιού 'appData' (ΕΔΩ αποθηκεύονται οι users και τα matches)
   await Hive.openBox('appData');
   
   runApp(const BlindyApp());
@@ -31,16 +33,19 @@ class BlindyApp extends StatelessWidget {
       title: 'Blindy',
       theme: ThemeData(
         fontFamily: 'Roboto',
-        colorScheme: ColorScheme.fromSeed(seedColor: Colors.red),
+        // Το κόκκινο χρώμα της εφαρμογής σου
+        colorScheme: ColorScheme.fromSeed(
+          seedColor: const Color(0xFFFF3131),
+          primary: const Color(0xFFFF3131),
+        ),
         useMaterial3: true,
       ),
+      
       // Η αρχική οθόνη
       home: const LoginScreen(),
       
-      // Τα routes για την πλοήγηση
+      // Τα routes για την πλοήγηση (ώστε να δουλεύει το pushNamed('/signup') κλπ)
       routes: {
-        // ΠΡΟΣΟΧΗ: Αν κάποια οθόνη δεν είναι const (π.χ. παίρνει ορίσματα),
-        // αφαίρεσε το 'const' από μπροστά της.
         '/match': (context) => const MatchScreen(),
         '/profile': (context) => const ViewProfileScreen(), 
         '/credentials': (context) => const CredentialsScreen(),

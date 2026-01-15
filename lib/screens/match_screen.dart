@@ -1,10 +1,9 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
-
-// Imports
-import 'view_profile.dart'; 
-import 'inbox.dart'; 
-import 'login_screen.dart'; 
+import '../services/storage_service.dart';
+import 'inbox.dart';
+import 'view_profile.dart';
+import 'profile_creation_screen.dart';
+import 'login_screen.dart';
 
 class MatchScreen extends StatefulWidget {
   const MatchScreen({super.key});
@@ -16,293 +15,284 @@ class MatchScreen extends StatefulWidget {
 class _MatchScreenState extends State<MatchScreen> {
   List<Map<String, dynamic>> _profiles = [];
   int _currentIndex = 0;
-  final Random _random = Random();
-  final List<int> _history = [];
-  String? _currentUser;
   bool _isLoading = true;
 
   @override
   void initState() {
     super.initState();
+    _checkProfileCompletion();
     _loadProfiles();
   }
 
-  Future<void> _loadProfiles() async {
-    try {
-      await Future.delayed(const Duration(milliseconds: 500));
-      _currentUser = StorageService.getLoggedInUser();
+  void _checkProfileCompletion() {
+    final loggedInUser = StorageService.getLoggedInUser();
+    if (loggedInUser != null) {
+      final userProfiles = StorageService.appData.get('userProfiles') ?? {};
+      final userProfile = userProfiles[loggedInUser] ?? {};
       
-      final rawProfiles = await StorageService.getAllProfiles();
-      
-      // Διόρθωση List<Map>
-      final List<Map<String, dynamic>> safeProfiles = rawProfiles.map((profile) {
-        return Map<String, dynamic>.from(profile as Map);
-      }).toList();
-
-      if (mounted) {
-        setState(() {
-          _profiles = safeProfiles;
-          _isLoading = false;
-        });
-      }
-    } catch (e) {
-      print('Error loading profiles: $e');
-      if (mounted) {
-        setState(() {
-          _isLoading = false;
-        });
+      if (userProfile['profileCompleted'] != true) {
+        // Profile incomplete, redirect to profile creation
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => ProfileCreationScreen(username: loggedInUser)),
+        );
       }
     }
   }
 
-  void _logout() {
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (context) => const LoginScreen()),
-      (route) => false,
-    );
+  void _loadProfiles() {
+    final profiles = StorageService.getProfilesToSwipe();
+    setState(() {
+      _profiles = profiles;
+      _isLoading = false;
+    });
   }
 
-  void _nextProfile({bool random = false}) {
+  void _onSwipe(bool liked) async {
     if (_profiles.isEmpty) return;
-    setState(() {
-      _history.add(_currentIndex);
-      if (random && _profiles.length > 1) {
-        int newIndex;
-        do {
-          newIndex = _random.nextInt(_profiles.length);
-        } while (newIndex == _currentIndex);
-        _currentIndex = newIndex;
-      } else {
-        _currentIndex = (_currentIndex + 1) % _profiles.length;
-      }
-    });
-  }
-
-  void _prevProfile() {
-    setState(() {
-      if (_history.isNotEmpty) {
-        _currentIndex = _history.removeLast();
-      }
-    });
-  }
-
-  void _onInterested() async {
-    if (_currentUser != null && _profiles.isNotEmpty) {
-      final currentProfile = _profiles[_currentIndex];
-      final profileId = currentProfile['id'] ?? _currentIndex.toString();
-
-      await StorageService.likeProfile(_currentUser!, profileId);
-      
-      if (mounted) {
+    
+    final currentProfile = _profiles[_currentIndex];
+    
+    if (liked) {
+      await StorageService.likeProfile(currentProfile['id']);
+      bool isMatch = StorageService.checkMatch(currentProfile['id']);
+      if (isMatch && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('It\'s a Match! 🎉'),
-            duration: Duration(seconds: 2),
+          SnackBar(
+            content: Text("It's a Match with ${currentProfile['name']}! 🎉"),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
     }
-    _nextProfile();
+
+    setState(() {
+      _profiles.removeAt(_currentIndex);
+      if (_profiles.isNotEmpty) {
+        _currentIndex %= _profiles.length;
+      }
+    });
   }
 
-  void _onNotInterested() {
-    _nextProfile();
-  }
-
-  void _onRefresh() {
-    _nextProfile(random: true);
+  void _logout() async {
+    await StorageService.logoutUser();
+    if (mounted) {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginScreen()),
+      );
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return const Scaffold(body: Center(child: CircularProgressIndicator()));
-    }
-
-    if (_profiles.isEmpty) {
-      return Scaffold(
-        body: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFFF3131), Color(0xFFBD5656), Color(0xFFDA3838), Color(0xFFFF0000)],
-              stops: [0.0, 0.2067, 0.7452, 1.0],
-            ),
-          ),
-          child: Stack(
-            children: [
-               Positioned(
-                top: 60, right: 24,
-                child: IconButton(
-                  onPressed: _logout,
-                  icon: const Icon(Icons.logout, color: Colors.white, size: 32),
-                ),
-               ),
-               const Center(child: Text("No profiles found", style: TextStyle(color: Colors.white))),
-            ],
-          ),
-        ),
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
       );
     }
 
-    final profile = _profiles[_currentIndex];
-    final List interests = (profile['interests'] as List? ?? []);
-    final double compatibility = (profile['compatibility'] as num? ?? 0).toDouble();
-
     return Scaffold(
-      body: GestureDetector(
-        onHorizontalDragEnd: (details) {
-          if (details.primaryVelocity != null) {
-            if (details.primaryVelocity! < 0) {
-              _onNotInterested();
-            } else if (details.primaryVelocity! > 0) {
-              _onInterested();
-            }
-          }
-        },
-        child: Container(
-          width: double.infinity,
-          height: double.infinity,
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              begin: Alignment.topCenter,
-              end: Alignment.bottomCenter,
-              colors: [Color(0xFFFF3131), Color(0xFFBD5656), Color(0xFFDA3838), Color(0xFFFF0000)],
-              stops: [0.0, 0.2067, 0.7452, 1.0],
-            ),
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [Color(0xFFFF3131), Color(0xFFFF0000)],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-          child: Stack(
+        ),
+        child: SafeArea(
+          child: Column(
             children: [
-              // TOP BAR
-              Positioned(
-                top: 60, left: 0, right: 0,
-                child: Padding(
-                  padding: const EdgeInsets.symmetric(horizontal: 24.0),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      // --- ΕΔΩ ΕΙΝΑΙ ΤΟ ΚΛΕΙΔΙ ---
-                      // Χρησιμοποιούμε PUSH για να ανοίξουμε το προφίλ χωρίς να χάσουμε το MatchScreen
-                      GestureDetector(
-                        onTap: () {
-                          Navigator.of(context).push(
-                            MaterialPageRoute(builder: (context) => const ViewProfileScreen()),
-                          );
-                        },
-                        child: const Icon(Icons.person_outline, color: Colors.white, size: 32),
+              // Header
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    IconButton(
+                      icon: const Icon(Icons.person, color: Colors.white, size: 28),
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const ViewProfileScreen()),
                       ),
-                      
-                      const Text(
-                        'Matches',
-                        style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 40, color: Colors.white),
+                    ),
+                    const Text(
+                      "Blindy",
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 24,
+                        fontWeight: FontWeight.bold,
                       ),
-                      
-                      Row(
-                        children: [
-                          GestureDetector(
-                            onTap: () {
-                               Navigator.of(context).push(
-                                 MaterialPageRoute(
-                                   builder: (context) => const Inbox(), 
-                                 ),
-                               );
-                            },
-                            child: const Icon(Icons.chat_bubble_outline, color: Colors.white, size: 32),
+                    ),
+                    PopupMenuButton<String>(
+                      icon: const Icon(Icons.more_vert, color: Colors.white, size: 28),
+                      color: const Color(0xFF633B48),
+                      itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
+                        PopupMenuItem<String>(
+                          value: 'messages',
+                          child: Row(
+                            children: const [
+                              Icon(Icons.chat_bubble, color: Colors.white, size: 20),
+                              SizedBox(width: 8),
+                              Text('Messages', style: TextStyle(color: Colors.white)),
+                            ],
                           ),
-                          const SizedBox(width: 16), 
-                          GestureDetector(
-                            onTap: _logout,
-                            child: const Icon(Icons.logout, color: Colors.white, size: 32),
+                          onTap: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const Inbox()),
                           ),
-                        ],
-                      ),
-                    ],
-                  ),
+                        ),
+                        PopupMenuItem<String>(
+                          value: 'logout',
+                          child: Row(
+                            children: const [
+                              Icon(Icons.logout, color: Colors.red, size: 20),
+                              SizedBox(width: 8),
+                              Text('Logout', style: TextStyle(color: Colors.red)),
+                            ],
+                          ),
+                          onTap: _logout,
+                        ),
+                      ],
+                    ),
+                  ],
                 ),
               ),
-
-              // CARD
-              Center(
-                child: Container(
-                  margin: const EdgeInsets.only(top: 80),
-                  width: 360,
-                  height: 500,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFC31A36),
-                    borderRadius: BorderRadius.circular(32),
-                    border: Border.all(color: Colors.black12, width: 2),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.15), blurRadius: 16, offset: const Offset(0, 8))],
-                  ),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 24, 24, 0),
-                        child: Row(
+              const SizedBox(height: 20),
+              // Card or No Matches Message
+              Expanded(
+                child: Center(
+                  child: _profiles.isEmpty
+                      ? Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Text(profile['name'] ?? 'Unknown', style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, fontSize: 24, color: Colors.white)),
-                            const SizedBox(width: 16),
-                            const Icon(Icons.location_on, color: Colors.white, size: 20),
-                            const SizedBox(width: 4),
-                            Text(profile['location'] ?? 'Unknown', style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 16, color: Colors.white)),
+                            Icon(Icons.favorite_border, color: Colors.white, size: 64),
+                            const SizedBox(height: 16),
+                            const Text(
+                              'There are no matches left',
+                              style: TextStyle(
+                                fontSize: 24,
+                                fontWeight: FontWeight.bold,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(height: 32),
+                            ElevatedButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const Inbox()),
+                              ),
+                              icon: const Icon(Icons.favorite),
+                              label: const Text('View Your Matches'),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.white,
+                                foregroundColor: const Color(0xFFFF3131),
+                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                              ),
+                            ),
                           ],
+                        )
+                      : Container(
+                          height: 520,
+                          width: 340,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(20),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withOpacity(0.3),
+                                blurRadius: 8,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: _buildProfileCard(),
                         ),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.fromLTRB(24, 16, 24, 0),
-                        child: Text('Bio:', style: TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w500, fontSize: 16, color: Colors.white.withOpacity(0.9))),
-                      ),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 4),
-                        child: Text(profile['bio'] ?? '', maxLines: 3, overflow: TextOverflow.ellipsis, style: const TextStyle(fontFamily: 'Roboto', fontWeight: FontWeight.w400, fontSize: 16, color: Colors.white)),
-                      ),
-                      const Spacer(),
-                      Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
-                        child: Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                          children: [
-                            IconButton(icon: const Icon(Icons.arrow_back_ios, color: Colors.white, size: 28), onPressed: _prevProfile),
-                            IconButton(icon: const Icon(Icons.close, color: Colors.white, size: 32), onPressed: _onNotInterested),
-                            IconButton(icon: const Icon(Icons.favorite, color: Color(0xFFFF6171), size: 32), onPressed: _onInterested),
-                            IconButton(icon: const Icon(Icons.refresh, color: Colors.white, size: 28), onPressed: _onRefresh),
-                          ],
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
               ),
+              const SizedBox(height: 20),
             ],
           ),
         ),
       ),
     );
   }
-}
 
-// STORAGE SERVICE
-class StorageService {
-  static String getLoggedInUser() => "user123";
-  
-  static Future<List<dynamic>> getAllProfiles() async {
-    return [
-      {'id': '1', 'name': 'Maria', 'age': '24', 'location': 'Athens', 'bio': 'Coffee & Art.', 'interests': ['Art', 'Coffee'], 'compatibility': 0.85},
-      {'id': '2', 'name': 'Eleni', 'age': '22', 'location': 'Thessaloniki', 'bio': 'Hiking lover.', 'interests': ['Hiking', 'Pets'], 'compatibility': 0.65},
-      {'id': '3', 'name': 'Anna', 'age': '25', 'location': 'Patras', 'bio': 'Travel & Music.', 'interests': ['Music', 'Travel'], 'compatibility': 0.90}
-    ];
+  Widget _buildProfileCard() {
+    final profile = _profiles[_currentIndex];
+    
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      children: [
+        // Profile info
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                profile['name'] ?? 'Unknown',
+                style: const TextStyle(
+                  fontSize: 28,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                "${profile['age'] ?? '?'} • ${profile['location'] ?? 'Unknown'}",
+                style: TextStyle(
+                  fontSize: 16,
+                  color: Colors.grey[600],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                profile['bio'] ?? '',
+                style: const TextStyle(fontSize: 14),
+                textAlign: TextAlign.start,
+              ),
+              const SizedBox(height: 16),
+              // Interests
+              if (profile['interests'] != null && (profile['interests'] as List).isNotEmpty)
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: (profile['interests'] as List)
+                      .map((interest) => Chip(
+                        label: Text(interest.toString()),
+                        backgroundColor: const Color(0xFFFFB7CD),
+                        labelStyle: const TextStyle(
+                          color: Color(0xFF633B48),
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ))
+                      .toList(),
+                ),
+            ],
+          ),
+        ),
+        const Spacer(),
+        // Action buttons
+        Padding(
+          padding: const EdgeInsets.all(20),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
+              FloatingActionButton(
+                onPressed: () => _onSwipe(false),
+                backgroundColor: Colors.grey[300],
+                child: const Icon(Icons.close, color: Colors.red, size: 28),
+              ),
+              FloatingActionButton(
+                onPressed: () => _onSwipe(true),
+                backgroundColor: Colors.green[300],
+                child: const Icon(Icons.favorite, color: Colors.white, size: 28),
+              ),
+            ],
+          ),
+        ),
+      ],
+    );
   }
-
-  static Future<List<Map<String, String>>> getMatches() async {
-    await Future.delayed(const Duration(milliseconds: 300));
-    return [
-      {'name': 'Anna, 25', 'lastMessage': 'You: Hello!', 'chatId': 'person1', 'location': 'Patras'},
-      {'name': 'Maria, 24', 'lastMessage': 'Maria: Hey there!', 'chatId': 'person2', 'location': 'Athens'},
-    ];
-  }
-
-  static Future<void> likeProfile(String u, String p) async {}
-  static bool checkMatch(String u, String p) => true; 
 }

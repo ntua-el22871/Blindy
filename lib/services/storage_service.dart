@@ -1,372 +1,236 @@
-import 'package:hive/hive.dart';
+import 'package:hive_flutter/hive_flutter.dart';
 
 class StorageService {
-  // Get Hive boxes
-  static Box get _usersBox => Hive.box('appData');
-  static Box get _profilesBox => Hive.box('appData');
-  static Box get _likesBox => Hive.box('appData');
-  static Box get _messagesBox => Hive.box('appData');
+  static Box get _box => Hive.box('appData');
+  
+  // Expose for direct access to appData
+  static Box get appData => _box;
 
-  /// ==================== USER MANAGEMENT ====================
+  /// ΚΑΘΑΡΙΣΜΟΣ ΒΑΣΗΣ (Για debugging)
+  static Future<void> clearAll() async {
+    await _box.clear();
+    print("--- DATABASE CLEARED ---");
+  }
 
-  /// Register a new user
+  // --- 1. USER AUTHENTICATION ---
+
+  /// Εγγραφή χρήστη & δημιουργία προφίλ
   static Future<bool> registerUser(String username, String password) async {
     try {
-      // Check if user already exists
-      final users = _usersBox.get('users', defaultValue: {}) as Map;
+      print("Attempting to register: $username");
+      final users = Map<String, dynamic>.from(_box.get('users', defaultValue: {}));
       
       if (users.containsKey(username)) {
-        return false; // User already exists
+        return false; 
       }
 
-      // Add new user
+      // Αποθήκευση User
       users[username] = {
         'username': username,
-        'password': password, // In production, hash this!
+        'password': password,
         'createdAt': DateTime.now().toString(),
       };
+      await _box.put('users', users);
 
-      await _usersBox.put('users', users);
+      // Αποθήκευση Προφίλ
+      final profiles = Map<String, dynamic>.from(_box.get('profiles', defaultValue: {}));
+      profiles[username] = {
+        'id': username,
+        'name': username, 
+        'age': '25',
+        'gender': 'Unknown',
+        'location': 'Athens',
+        'bio': 'New user on Blindy!',
+        'interests': ['Coffee', 'Music'],
+      };
+      await _box.put('profiles', profiles);
+      
       return true;
     } catch (e) {
-      print('Error registering user: $e');
+      print('Error registering: $e');
       return false;
     }
   }
 
-  /// Login user
+  /// Login
   static Future<bool> loginUser(String username, String password) async {
-    try {
-      final users = _usersBox.get('users', defaultValue: {}) as Map;
-      
-      if (!users.containsKey(username)) {
-        return false; // User doesn't exist
-      }
+    final users = Map<String, dynamic>.from(_box.get('users', defaultValue: {}));
+    if (!users.containsKey(username)) return false;
 
-      final user = users[username] as Map;
-      if (user['password'] == password) {
-        return true; // Login successful
-      }
-      return false; // Wrong password
-    } catch (e) {
-      print('Error logging in: $e');
-      return false;
+    final user = users[username] as Map;
+    if (user['password'] == password) {
+      // Σημείωση: Το saveLoggedInUser καλείται και από το credentials.dart,
+      // αλλά το κάνουμε και εδώ για σιγουριά.
+      await _box.put('loggedInUser', username);
+      print("User $username logged in.");
+      return true;
     }
+    return false;
   }
 
-  /// Save currently logged in user
+  /// Αποθήκευση συνδεδεμένου χρήστη (Ζητείται από το credentials.dart)
   static Future<void> saveLoggedInUser(String username) async {
-    try {
-      await _usersBox.put('loggedInUser', username);
-    } catch (e) {
-      print('Error saving logged in user: $e');
-    }
+    await _box.put('loggedInUser', username);
   }
 
-  /// Get currently logged in user
   static String? getLoggedInUser() {
-    try {
-      return _usersBox.get('loggedInUser') as String?;
-    } catch (e) {
-      print('Error getting logged in user: $e');
-      return null;
-    }
+    return _box.get('loggedInUser');
   }
 
-  /// Logout user
   static Future<void> logoutUser() async {
-    try {
-      await _usersBox.delete('loggedInUser');
-    } catch (e) {
-      print('Error logging out: $e');
-    }
+    await _box.delete('loggedInUser');
   }
 
-  /// ==================== DUMMY PROFILES ====================
+  // --- 2. DATA & PROFILES ---
 
-  /// Insert dummy dating profiles on first launch
+  /// Εισαγωγή ψεύτικων προφίλ (Ζητείται από το credentials.dart)
   static Future<void> insertDummyProfiles() async {
-    try {
-      // Check if profiles already exist
-      final profiles = _profilesBox.get('profiles', defaultValue: {}) as Map;
-      
-      if (profiles.isNotEmpty) {
-        return; // Profiles already exist
-      }
-
-      // Add dummy profiles
-      final dummyProfiles = {
-        '1': {
-          'id': '1',
-          'name': 'Emma',
-          'age': 24,
-          'gender': 'Female',
-          'location': 'Athens',
-          'bio': 'Love hiking and coffee. Let\'s explore the city together!',
-          'image': 'assets/images/emma.jpg',
-        },
-        '2': {
-          'id': '2',
-          'name': 'Sofia',
-          'age': 23,
-          'gender': 'Female',
-          'location': 'Glyfada',
-          'bio': 'Book lover, yoga enthusiast, and always up for adventures.',
-          'image': 'assets/images/sofia.jpg',
-        },
-        '3': {
-          'id': '3',
-          'name': 'Maria',
-          'age': 25,
-          'gender': 'Female',
-          'location': 'Kolonaki',
-          'bio': 'Artist by day, night owl by night. Let\'s have a great conversation!',
-          'image': 'assets/images/maria.jpg',
-        },
-        '4': {
-          'id': '4',
-          'name': 'Alex',
-          'age': 26,
-          'gender': 'Female',
-          'location': 'Psyrri',
-          'bio': 'Foodie, traveler, and dog lover. Always smiling!',
-          'image': 'assets/images/alex.jpg',
-        },
-        '5': {
-          'id': '5',
-          'name': 'Nina',
-          'age': 22,
-          'gender': 'Female',
-          'location': 'Exarcheia',
-          'bio': 'Music enthusiast with a passion for photography.',
-          'image': 'assets/images/nina.jpg',
-        },
+    final profiles = Map<String, dynamic>.from(_box.get('profiles', defaultValue: {}));
+    
+    // Αν δεν υπάρχουν προφίλ, φτιάξε μερικά για να μην είναι άδειο
+    if (profiles.isEmpty) {
+      print("Inserting dummy profiles...");
+      profiles['maria'] = {
+        'id': 'maria', 'name': 'Maria', 'age': '24', 'location': 'Athens',
+        'bio': 'Coffee lover ☕', 'interests': ['Coffee', 'Art']
       };
-
-      await _profilesBox.put('profiles', dummyProfiles);
-    } catch (e) {
-      print('Error inserting dummy profiles: $e');
+      profiles['giannis'] = {
+        'id': 'giannis', 'name': 'Giannis', 'age': '26', 'location': 'Thessaloniki',
+        'bio': 'Travel addict ✈️', 'interests': ['Travel', 'Gym']
+      };
+      await _box.put('profiles', profiles);
     }
   }
 
-  /// Get all profiles
-  static List<Map> getAllProfiles() {
-    try {
-      final profiles = _profilesBox.get('profiles', defaultValue: {}) as Map;
-      return profiles.values.cast<Map>().toList();
-    } catch (e) {
-      print('Error getting profiles: $e');
-      return [];
+  /// Λήψη προφίλ για Swipe (Εξαιρώντας τον εαυτό μας και τα likes)
+  static List<Map<String, dynamic>> getProfilesToSwipe() {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return [];
+
+    final profiles = Map<String, dynamic>.from(_box.get('profiles', defaultValue: {}));
+    final likes = Map<String, dynamic>.from(_box.get('likes', defaultValue: {}));
+
+    List myLikes = [];
+    if (likes.containsKey(currentUser)) {
+      myLikes = List.from(likes[currentUser]);
     }
-  }
 
-  /// Get a specific profile by ID
-  static Map? getProfile(String profileId) {
-    try {
-      final profiles = _profilesBox.get('profiles', defaultValue: {}) as Map;
-      return profiles[profileId] as Map?;
-    } catch (e) {
-      print('Error getting profile: $e');
-      return null;
-    }
-  }
-
-  /// ==================== LIKE & MATCH SYSTEM ====================
-
-  /// Like a profile
-  static Future<void> likeProfile(String currentUser, String targetProfileId) async {
-    try {
-      final likes = _likesBox.get('likes', defaultValue: {}) as Map;
-
-      if (!likes.containsKey(currentUser)) {
-        likes[currentUser] = [];
+    List<Map<String, dynamic>> result = [];
+    profiles.forEach((key, value) {
+      if (key != currentUser && !myLikes.contains(key)) {
+        result.add(Map<String, dynamic>.from(value as Map));
       }
+    });
+    
+    return result;
+  }
 
-      final userLikes = likes[currentUser] as List;
-      if (!userLikes.contains(targetProfileId)) {
-        userLikes.add(targetProfileId);
-        likes[currentUser] = userLikes;
-        await _likesBox.put('likes', likes);
-      }
-    } catch (e) {
-      print('Error liking profile: $e');
+  /// Update profile
+  static Future<void> updateProfile(String userId, Map<String, dynamic> profileData) async {
+    // Update both structures for backward compatibility
+    final profiles = Map<String, dynamic>.from(_box.get('profiles', defaultValue: {}));
+    profiles[userId] = profileData;
+    await _box.put('profiles', profiles);
+    
+    // Also update userProfiles for new structure
+    final userProfiles = Map<String, dynamic>.from(_box.get('userProfiles', defaultValue: {}));
+    userProfiles[userId] = profileData;
+    await _box.put('userProfiles', userProfiles);
+  }
+
+  // --- 3. MATCHING SYSTEM ---
+
+  static Future<void> likeProfile(String targetId) async {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return;
+
+    final likes = Map<String, dynamic>.from(_box.get('likes', defaultValue: {}));
+    if (!likes.containsKey(currentUser)) likes[currentUser] = [];
+
+    final userLikes = List.from(likes[currentUser]);
+    if (!userLikes.contains(targetId)) {
+      userLikes.add(targetId);
+      likes[currentUser] = userLikes;
+      await _box.put('likes', likes);
+      print("$currentUser LIKED $targetId");
     }
   }
 
-  /// Unlike a profile
-  static Future<void> unlikeProfile(String currentUser, String targetProfileId) async {
-    try {
-      final likes = _likesBox.get('likes', defaultValue: {}) as Map;
+  static bool checkMatch(String targetId) {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return false;
 
-      if (likes.containsKey(currentUser)) {
-        final userLikes = likes[currentUser] as List;
-        userLikes.removeWhere((id) => id == targetProfileId);
-        likes[currentUser] = userLikes;
-        await _likesBox.put('likes', likes);
-      }
-    } catch (e) {
-      print('Error unliking profile: $e');
-    }
+    final likes = Map<String, dynamic>.from(_box.get('likes', defaultValue: {}));
+    
+    bool iLiked = (likes[currentUser] as List? ?? []).contains(targetId);
+    bool theyLiked = (likes[targetId] as List? ?? []).contains(currentUser);
+
+    return iLiked && theyLiked;
   }
 
-  /// Check if two users matched
-  static bool checkMatch(String currentUser, String targetProfileId) {
-    try {
-      final likes = _likesBox.get('likes', defaultValue: {}) as Map;
+  static Future<List<Map<String, String>>> getMatchesForInbox() async {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return [];
 
-      // Check if current user liked target profile
-      bool currentUserLiked = false;
-      if (likes.containsKey(currentUser)) {
-        final userLikes = likes[currentUser] as List;
-        currentUserLiked = userLikes.contains(targetProfileId);
+    final profiles = Map<String, dynamic>.from(_box.get('profiles', defaultValue: {}));
+    final matches = <Map<String, String>>[];
+
+    profiles.forEach((key, value) {
+      if (key != currentUser && checkMatch(key)) {
+        matches.add({
+          'name': value['name'],
+          'lastMessage': 'It\'s a match!',
+          'chatId': key,
+          'location': value['location'] ?? '',
+        });
       }
-
-      // Check if target profile liked current user
-      bool targetUserLiked = false;
-      if (likes.containsKey(targetProfileId)) {
-        final userLikes = likes[targetProfileId] as List;
-        targetUserLiked = userLikes.contains(currentUser);
-      }
-
-      // Match occurs when both liked each other
-      return currentUserLiked && targetUserLiked;
-    } catch (e) {
-      print('Error checking match: $e');
-      return false;
-    }
+    });
+    return matches;
   }
 
-  /// Get all matches for a user
-  static List<Map> getMatches(String currentUser) {
-    try {
-      final likes = _likesBox.get('likes', defaultValue: {}) as Map;
-      final profiles = _profilesBox.get('profiles', defaultValue: {}) as Map;
-      final matches = <Map>[];
+  // --- 4. CHAT SYSTEM ---
 
-      // Get users that current user liked
-      if (likes.containsKey(currentUser)) {
-        final userLikes = likes[currentUser] as List;
+  /// Get chat messages between two users
+  static List<Map<String, dynamic>> getChatMessages(String chatId) {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return [];
 
-        for (String targetProfileId in userLikes) {
-          // Check if they also liked current user
-          if (likes.containsKey(targetProfileId)) {
-            final targetLikes = likes[targetProfileId] as List;
-            if (targetLikes.contains(currentUser)) {
-              // This is a match!
-              if (profiles.containsKey(targetProfileId)) {
-                matches.add(profiles[targetProfileId] as Map);
-              }
-            }
-          }
-        }
-      }
-
-      return matches;
-    } catch (e) {
-      print('Error getting matches: $e');
-      return [];
-    }
+    final chats = Map<String, dynamic>.from(_box.get('chats', defaultValue: {}));
+    final conversationKey = _getChatKey(currentUser, chatId);
+    
+    final messages = List<Map<String, dynamic>>.from(
+      (chats[conversationKey] ?? []).map((m) => Map<String, dynamic>.from(m as Map))
+    );
+    
+    return messages;
   }
 
-  /// Get all users that current user liked
-  static List<String> getLikedProfiles(String currentUser) {
-    try {
-      final likes = _likesBox.get('likes', defaultValue: {}) as Map;
+  /// Send a message in chat
+  static Future<void> sendMessage(String chatId, String message) async {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return;
 
-      if (likes.containsKey(currentUser)) {
-        return List<String>.from(likes[currentUser] as List);
-      }
-      return [];
-    } catch (e) {
-      print('Error getting liked profiles: $e');
-      return [];
-    }
+    final chats = Map<String, dynamic>.from(_box.get('chats', defaultValue: {}));
+    final conversationKey = _getChatKey(currentUser, chatId);
+    
+    final messageData = {
+      'sender': currentUser,
+      'text': message,
+      'timestamp': DateTime.now().toString(),
+    };
+
+    final messages = List<Map<String, dynamic>>.from(
+      (chats[conversationKey] ?? []).map((m) => Map<String, dynamic>.from(m as Map))
+    );
+    messages.add(messageData);
+    chats[conversationKey] = messages;
+    
+    await _box.put('chats', chats);
   }
 
-  /// ==================== CHAT SYSTEM ====================
-
-  /// Send a message between two users
-  static Future<void> sendMessage(
-    String fromUser,
-    String toUser,
-    String text,
-  ) async {
-    try {
-      final messages = _messagesBox.get('messages', defaultValue: {}) as Map;
-
-      // Create a conversation key (sort usernames to ensure consistency)
-      final users = [fromUser, toUser]..sort();
-      final conversationKey = '${users[0]}_${users[1]}';
-
-      if (!messages.containsKey(conversationKey)) {
-        messages[conversationKey] = [];
-      }
-
-      final conversation = messages[conversationKey] as List;
-      
-      conversation.add({
-        'from': fromUser,
-        'to': toUser,
-        'text': text,
-        'timestamp': DateTime.now().toString(),
-      });
-
-      messages[conversationKey] = conversation;
-      await _messagesBox.put('messages', messages);
-    } catch (e) {
-      print('Error sending message: $e');
-    }
-  }
-
-  /// Get all messages between two users
-  static List<Map<String, dynamic>> getMessagesBetween(String userA, String userB) {
-    try {
-      final messages = _messagesBox.get('messages', defaultValue: {}) as Map;
-
-      // Create a conversation key (sort usernames to ensure consistency)
-      final users = [userA, userB]..sort();
-      final conversationKey = '${users[0]}_${users[1]}';
-
-      if (messages.containsKey(conversationKey)) {
-        final messageList = messages[conversationKey] as List;
-        return messageList
-            .map((msg) => Map<String, dynamic>.from(msg as Map))
-            .toList();
-      }
-      return [];
-    } catch (e) {
-      print('Error getting messages: $e');
-      return [];
-    }
-  }
-
-  /// Get all conversations for a user
-  static List<String> getConversations(String username) {
-    try {
-      final messages = _messagesBox.get('messages', defaultValue: {}) as Map;
-      final conversations = <String>[];
-
-      for (String key in messages.keys) {
-        if (key.contains(username)) {
-          conversations.add(key);
-        }
-      }
-
-      return conversations;
-    } catch (e) {
-      print('Error getting conversations: $e');
-      return [];
-    }
-  }
-
-  /// ==================== UTILITY ====================
-
-  /// Clear all data (for testing/reset)
-  static Future<void> clearAllData() async {
-    try {
-      await _usersBox.clear();
-    } catch (e) {
-      print('Error clearing data: $e');
-    }
+  /// Generate consistent chat key between two users (order doesn't matter)
+  static String _getChatKey(String user1, String user2) {
+    final users = [user1, user2]..sort();
+    return '${users[0]}_${users[1]}';
   }
 }
