@@ -233,4 +233,51 @@ class StorageService {
     final users = [user1, user2]..sort();
     return '${users[0]}_${users[1]}';
   }
+
+  // --- 5. REVEAL SYSTEM ---
+
+  static Future<void> requestReveal(String chatId) async {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return;
+
+    final conversationKey = _getChatKey(currentUser, chatId);
+    final reveals = Map<String, dynamic>.from(_box.get('reveals', defaultValue: {}));
+    
+    if (!reveals.containsKey(conversationKey)) reveals[conversationKey] = [];
+    final requests = List.from(reveals[conversationKey]);
+    
+    if (!requests.contains(currentUser)) {
+      requests.add(currentUser);
+      reveals[conversationKey] = requests;
+      await _box.put('reveals', reveals);
+    }
+  }
+
+  static bool isRevealEnabled(String chatId) {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return false;
+
+    final conversationKey = _getChatKey(currentUser, chatId);
+    final reveals = Map<String, dynamic>.from(_box.get('reveals', defaultValue: {}));
+    final requests = List.from(reveals[conversationKey] ?? []);
+    
+    return requests.contains(currentUser) && requests.contains(chatId);
+  }
+
+  static bool hasRequestedReveal(String chatId) {
+    String? currentUser = getLoggedInUser();
+    if (currentUser == null) return false;
+
+    final conversationKey = _getChatKey(currentUser, chatId);
+    final reveals = Map<String, dynamic>.from(_box.get('reveals', defaultValue: {}));
+    final requests = List.from(reveals[conversationKey] ?? []);
+    
+    return requests.contains(currentUser);
+  }
+
+  static Map<String, dynamic>? getProfile(String userId) {
+    final profiles = Map<String, dynamic>.from(_box.get('profiles', defaultValue: {}));
+    final profile = profiles[userId];
+    return profile != null ? Map<String, dynamic>.from(profile as Map) : null;
+  }
 }

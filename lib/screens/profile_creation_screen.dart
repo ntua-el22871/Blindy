@@ -284,14 +284,14 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
           label: Text(
             option,
             style: TextStyle(
-              color: isSelected ? const Color(0xFF633B48) : Colors.white,
+              color: isSelected ? const Color(0xFF633B48) : const Color(0xFF633B48),
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
           ),
           selected: isSelected,
           onSelected: (value) => onChanged(option),
-          backgroundColor: isSelected ? const Color(0xFFFFB7CD) : Colors.white.withOpacity(0.25),
+          backgroundColor: isSelected ? const Color(0xFFFFB7CD) : Colors.white.withOpacity(0.1),
           selectedColor: const Color(0xFFFFB7CD),
           showCheckmark: false,
           side: BorderSide(
@@ -313,7 +313,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
           label: Text(
             interest,
             style: TextStyle(
-              color: isSelected ? const Color(0xFF633B48) : Colors.white,
+              color: isSelected ? const Color(0xFF633B48) : const Color(0xFF633B48),
               fontWeight: FontWeight.w600,
               fontSize: 14,
             ),
@@ -328,7 +328,7 @@ class _ProfileCreationScreenState extends State<ProfileCreationScreen> {
               }
             });
           },
-          backgroundColor: isSelected ? const Color(0xFFFFB7CD) : Colors.white.withOpacity(0.25),
+          backgroundColor: isSelected ? const Color(0xFFFFB7CD) : Colors.white.withOpacity(0.1),
           selectedColor: const Color(0xFFFFB7CD),
           showCheckmark: false,
           side: BorderSide(

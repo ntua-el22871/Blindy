@@ -1,297 +1,229 @@
 import 'package:flutter/material.dart';
+import '../services/storage_service.dart';
 import 'chat_screen.dart';
 import 'match_screen.dart';
 
-class RevealProfileScreen extends StatelessWidget {
-  final String personName;
-  final String location;
-  final String bio;
-  final List<String> interests;
-  final double compatibility;
-  final String chatId;
+const img2 = "https://www.figma.com/api/mcp/asset/7d708ba7-dd6b-4bbc-830d-38e07589c493";
+const img = "https://www.figma.com/api/mcp/asset/0ecef383-d5db-4e43-852b-290f7ef96770";
+const img1 = "https://www.figma.com/api/mcp/asset/df46312f-463c-439a-8325-968e3d3d3e25";
 
-  const RevealProfileScreen({
-    super.key,
-    required this.personName,
-    required this.location,
-    required this.bio,
-    required this.interests,
-    required this.compatibility,
-    required this.chatId,
-  });
+class RevealProfileScreen extends StatelessWidget {
+  final String userId;
+
+  const RevealProfileScreen({super.key, required this.userId});
 
   @override
   Widget build(BuildContext context) {
+    final profile = StorageService.getProfile(userId);
+    if (profile == null) {
+      return const Scaffold(body: Center(child: Text('Profile not found')));
+    }
+
     return Scaffold(
       body: Container(
-        width: double.infinity,
-        height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
+            colors: [Color(0xFFFF3131), Color(0xFFBD5656), Color(0xFFDA3838), Color(0xFFFF0000)],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
-            colors: [
-              Color(0xFFFF3131),
-              Color(0xFFBD5656),
-              Color(0xFFDA3838),
-              Color(0xFFFF0000),
-            ],
-            stops: [0.0, 0.2067, 0.7452, 1.0],
+            stops: [0.0, 0.20673, 0.74519, 1.0],
           ),
         ),
-        child: Stack(
-          children: [
-            // Scrollable content
-            Positioned.fill(
-              top: 80,
-              bottom: 100,
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 71),
+            child: Container(
+              height: 414,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [Color(0xFFFF3131), Color(0xFFBD5656), Color(0xFFDA3838), Color(0xFFFF0000)],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  stops: [0.0, 0.20673, 0.74519, 1.0],
+                ),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Container(
+                height: 414,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF7FF),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: const Color(0xFFCAC4D0)),
+                ),
                 child: Column(
-                  children: [
-                    // Profile Card
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(24),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFC31A36),
-                        borderRadius: BorderRadius.circular(24),
-                        border: Border.all(color: Colors.black12, width: 2),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withOpacity(0.15),
-                            blurRadius: 16,
-                            offset: const Offset(0, 8),
-                          ),
-                        ],
-                      ),
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // Name and Location
-                          Row(
-                            children: [
-                              Text(
-                                personName,
-                                style: const TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 28,
-                                  color: Colors.white,
+                    children: [
+                      // Header
+                      Padding(
+                        padding: const EdgeInsets.fromLTRB(16, 12, 4, 12),
+                        child: Row(
+                          children: [
+                            // Avatar
+                            Container(
+                              width: 40,
+                              height: 40,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                image: DecorationImage(
+                                  image: NetworkImage(img),
+                                  fit: BoxFit.cover,
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              const Icon(Icons.location_on, color: Colors.white, size: 20),
-                              const SizedBox(width: 4),
-                              Text(
-                                location,
-                                style: const TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontWeight: FontWeight.w400,
-                                  fontSize: 16,
-                                  color: Colors.white,
-                                ),
-                              ),
-                            ],
-                          ),
-                          const SizedBox(height: 24),
-                          // Bio Section
-                          Text(
-                            'Bio',
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 18,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 8),
-                          Text(
-                            bio,
-                            style: const TextStyle(
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w400,
-                              fontSize: 16,
-                              color: Colors.white,
-                              height: 1.5,
-                            ),
-                          ),
-                          const SizedBox(height: 24),
-                          // Interests Section
-                          Text(
-                            'Interests',
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 18,
-                              color: Colors.white.withOpacity(0.9),
-                            ),
-                          ),
-                          const SizedBox(height: 12),
-                          Wrap(
-                            spacing: 10,
-                            runSpacing: 10,
-                            children: List.generate(
-                              interests.length,
-                              (i) => Container(
-                                padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 16),
-                                decoration: BoxDecoration(
-                                  color: const Color(0xFFFFD8E4),
-                                  borderRadius: BorderRadius.circular(20),
-                                ),
+                              child: Center(
                                 child: Text(
-                                  interests[i],
+                                  (profile['name'] as String?)?.substring(0, 1).toUpperCase() ?? 'U',
                                   style: const TextStyle(
-                                    fontFamily: 'Roboto',
+                                    fontSize: 16,
                                     fontWeight: FontWeight.w500,
-                                    fontSize: 14,
-                                    color: Color(0xFF633B48),
+                                    color: Color(0xFF4F378A),
                                   ),
                                 ),
                               ),
                             ),
-                          ),
-                          const SizedBox(height: 24),
-                          // Compatibility Section
-                          Text(
-                            'Compatibility',
-                            style: TextStyle(
-                              fontFamily: 'Roboto',
-                              fontWeight: FontWeight.w500,
-                              fontSize: 18,
-                              color: Colors.white.withOpacity(0.9),
+                            const SizedBox(width: 16),
+                            Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    profile['name'] ?? 'Unknown',
+                                    style: const TextStyle(
+                                      fontSize: 16,
+                                      fontWeight: FontWeight.w500,
+                                      color: Color(0xFF1D1B20),
+                                    ),
+                                  ),
+                                  Text(
+                                    '${profile['location'] ?? 'Unknown'}',
+                                    style: const TextStyle(
+                                      fontSize: 14,
+                                      color: Color(0xFF49454F),
+                                    ),
+                                  ),
+                                ],
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 12),
-                          Row(
+                            IconButton(
+                              onPressed: () {}, // Placeholder for menu
+                              icon: Image.network(
+                                img1,
+                                width: 24,
+                                height: 24,
+                                color: const Color(0xFF49454F),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      // Media placeholder
+                      Container(
+                        height: 188,
+                        child: Image.network(
+                          img2,
+                          fit: BoxFit.cover,
+                          colorBlendMode: BlendMode.luminosity,
+                          color: const Color(0xFFECE6F0),
+                        ),
+                      ),
+                      // Text content
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Expanded(
-                                child: LinearProgressIndicator(
-                                  value: compatibility,
-                                  minHeight: 12,
-                                  backgroundColor: Colors.white.withOpacity(0.2),
-                                  valueColor: const AlwaysStoppedAnimation<Color>(Color(0xFFFF6171)),
-                                  borderRadius: BorderRadius.circular(8),
+                              const Text(
+                                'Bio',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  color: Color(0xFF1D1B20),
                                 ),
                               ),
-                              const SizedBox(width: 12),
-                              Text(
-                                '${(compatibility * 100).toInt()}%',
-                                style: const TextStyle(
-                                  fontFamily: 'Roboto',
-                                  fontWeight: FontWeight.w500,
-                                  fontSize: 18,
-                                  color: Colors.white,
+                              const Text(
+                                'Subtitle',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF49454F),
                                 ),
+                              ),
+                              const SizedBox(height: 32),
+                              Text(
+                                profile['bio'] ?? 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.',
+                                style: const TextStyle(
+                                  fontSize: 14,
+                                  color: Color(0xFF49454F),
+                                ),
+                              ),
+                              const Spacer(),
+                              // Actions
+                              Row(
+                                children: [
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pushReplacement(
+                                          MaterialPageRoute(
+                                            builder: (context) => ChatScreen(
+                                              personName: profile['name'] ?? 'Unknown',
+                                              chatId: userId,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: const Color(0xFFFFB7CD),
+                                        foregroundColor: const Color(0xFF633B48),
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(100),
+                                        ),
+                                      ),
+                                      child: const Text('Back to Chat'),
+                                    ),
+                                  ),
+                                  const SizedBox(width: 8),
+                                  Expanded(
+                                    child: ElevatedButton(
+                                      onPressed: () {
+                                        Navigator.of(context).pushAndRemoveUntil(
+                                          MaterialPageRoute(
+                                            builder: (context) => const MatchScreen(),
+                                          ),
+                                          (route) => false,
+                                        );
+                                      },
+                                      style: ElevatedButton.styleFrom(
+                                        backgroundColor: Colors.transparent,
+                                        foregroundColor: Colors.white,
+                                        shape: RoundedRectangleBorder(
+                                          borderRadius: BorderRadius.circular(100),
+                                        ),
+                                      ),
+                                      child: Container(
+                                        decoration: BoxDecoration(
+                                          gradient: const LinearGradient(
+                                            colors: [Color(0xFFFF3131), Color(0xFFFF0000)],
+                                            begin: Alignment.centerLeft,
+                                            end: Alignment.centerRight,
+                                          ),
+                                          borderRadius: BorderRadius.circular(100),
+                                        ),
+                                        padding: const EdgeInsets.symmetric(vertical: 10),
+                                        child: const Center(
+                                          child: Text('To Matches'),
+                                        ),
+                                      ),
+                                    ),
+                                  ),
+                                ],
                               ),
                             ],
                           ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                  ],
-                ),
-              ),
-            ),
-            // Top buttons
-            Positioned(
-              top: 20,
-              left: 20,
-              right: 20,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  // Return to chat button
-                  SizedBox(
-                    width: 77,
-                    height: 32,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFB7CD),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
                         ),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).pushReplacement(
-                          MaterialPageRoute(
-                            builder: (context) => ChatScreen(
-                              personName: personName,
-                              chatId: chatId,
-                            ),
-                          ),
-                        );
-                      },
-                      child: const Text(
-                        'BACK',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: Color(0xFF633B48),
-                        ),
-                      ),
-                    ),
-                  ),
-                  // Return to home button
-                  SizedBox(
-                    width: 100,
-                    height: 32,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: const Color(0xFFFFB7CD),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                      ),
-                      onPressed: () {
-                        Navigator.of(context).pushAndRemoveUntil(
-                          MaterialPageRoute(
-                            builder: (context) => const MatchScreen(),
-                          ),
-                          (route) => false,
-                        );
-                      },
-                      child: const Text(
-                        'HOME',
-                        style: TextStyle(
-                          fontFamily: 'Roboto',
-                          fontWeight: FontWeight.w500,
-                          fontSize: 12,
-                          color: Color(0xFF633B48),
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            // Title
-            Positioned(
-              top: 60,
-              left: 0,
-              right: 0,
-              child: Center(
-                child: Text(
-                  'Profile',
-                  style: TextStyle(
-                    fontFamily: 'Roboto',
-                    fontWeight: FontWeight.w400,
-                    fontSize: 32,
-                    color: Colors.white,
-                    shadows: [
-                      Shadow(
-                        color: Colors.black.withOpacity(0.25),
-                        offset: const Offset(0, 4),
-                        blurRadius: 4,
                       ),
                     ],
                   ),
                 ),
-              ),
             ),
-          ],
+          ),
         ),
       ),
     );

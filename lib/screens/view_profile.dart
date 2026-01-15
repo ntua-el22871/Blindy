@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import 'match_screen.dart';
 
 class ViewProfileScreen extends StatefulWidget {
   const ViewProfileScreen({super.key});
@@ -157,28 +158,26 @@ class _ViewProfileScreenState extends State<ViewProfileScreen> {
         ),
         child: Stack(
           children: [
-            // --- PREV BUTTON ---
+            // --- RETURN BUTTON ---
             Positioned(
               top: 20,
               left: 20,
-              child: SizedBox(
-                width: 77,
-                height: 32,
-                child: ElevatedButton(
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: const Color(0xFFFFB7CD),
-                    shape: RoundedRectangleBorder(
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  onTap: () => Navigator.of(context).pushReplacement(
+                    MaterialPageRoute(builder: (context) => const MatchScreen()),
+                  ),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFFFB7CD),
                       borderRadius: BorderRadius.circular(12),
                     ),
-                  ),
-                  onPressed: () => Navigator.of(context).pop(),
-                  child: const Text(
-                    'PREV',
-                    style: TextStyle(
-                      fontFamily: 'Roboto',
-                      fontWeight: FontWeight.w500,
-                      fontSize: 14,
+                    child: const Icon(
+                      Icons.arrow_back,
                       color: Color(0xFF633B48),
+                      size: 20,
                     ),
                   ),
                 ),

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
+import 'reveal_profile.dart';
 
 class ChatScreen extends StatefulWidget {
   final String personName;
@@ -55,6 +56,9 @@ class _ChatScreenState extends State<ChatScreen> {
 
   @override
   Widget build(BuildContext context) {
+    bool revealEnabled = StorageService.isRevealEnabled(widget.chatId);
+    bool hasRequested = StorageService.hasRequestedReveal(widget.chatId);
+
     return Scaffold(
       body: Container(
         decoration: const BoxDecoration(
@@ -102,6 +106,41 @@ class _ChatScreenState extends State<ChatScreen> {
                       ),
                     ),
                   ],
+                ),
+              ),
+              // Reveal button
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: SizedBox(
+                  width: double.infinity,
+                  child: ElevatedButton(
+                    onPressed: revealEnabled
+                        ? () {
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => RevealProfileScreen(userId: widget.chatId),
+                              ),
+                            );
+                          }
+                        : hasRequested
+                            ? null
+                            : () async {
+                                await StorageService.requestReveal(widget.chatId);
+                                setState(() {});
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('Reveal requested. Waiting for the other user.')),
+                                );
+                              },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: revealEnabled ? const Color(0xFFFFB7CD) : hasRequested ? Colors.grey : const Color(0xFFFFB7CD),
+                      foregroundColor: revealEnabled ? const Color(0xFF633B48) : hasRequested ? Colors.white : const Color(0xFF633B48),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    ),
+                    child: Text(
+                      revealEnabled ? 'Reveal Profile' : hasRequested ? 'Waiting for other user...' : 'Request Reveal',
+                    ),
+                  ),
                 ),
               ),
               const Divider(color: Colors.white24, height: 1),
