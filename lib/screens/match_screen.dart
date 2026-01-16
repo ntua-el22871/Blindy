@@ -96,6 +96,8 @@ class _MatchScreenState extends State<MatchScreen> {
       );
     }
   }
+
+  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(
@@ -139,6 +141,13 @@ class _MatchScreenState extends State<MatchScreen> {
                     PopupMenuButton<String>(
                       icon: const Icon(Icons.more_vert, color: Colors.white, size: 28),
                       color: const Color(0xFF633B48),
+                      onSelected: (value) {
+                        if (value == 'messages') {
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const Inbox()));
+                        } else if (value == 'logout') {
+                          _logout();
+                        }
+                      },
                       itemBuilder: (BuildContext context) => <PopupMenuEntry<String>>[
                         PopupMenuItem<String>(
                           value: 'messages',
@@ -149,14 +158,9 @@ class _MatchScreenState extends State<MatchScreen> {
                               Text('Messages', style: TextStyle(color: Colors.white)),
                             ],
                           ),
-                          onTap: () => Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (_) => const Inbox()),
-                          ),
                         ),
                         PopupMenuItem<String>(
                           value: 'logout',
-                          onTap: _logout,
                           child: Row(
                             children: const [
                               Icon(Icons.logout, color: Colors.red, size: 20),
@@ -171,55 +175,39 @@ class _MatchScreenState extends State<MatchScreen> {
                 ),
               ),
               const SizedBox(height: 20),
+              
               // Card or No Matches Message
               Expanded(
                 child: Center(
                   child: _profiles.isEmpty
-                      ? Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            Icon(Icons.favorite_border, color: Colors.white, size: 64),
-                            const SizedBox(height: 16),
-                            const Text(
-                              'There are no matches left',
-                              style: TextStyle(
-                                fontSize: 24,
-                                fontWeight: FontWeight.bold,
-                                color: Colors.white,
-                              ),
+                      ? _buildNoMatchesView()
+                      : GestureDetector(
+                          onHorizontalDragEnd: (details) {
+                            // Swipe Detection Logic
+                            if (details.primaryVelocity != null) {
+                              if (details.primaryVelocity! > 0) {
+                                _onSwipe(true); // Swipe Right -> Like
+                              } else if (details.primaryVelocity! < 0) {
+                                _onSwipe(false); // Swipe Left -> Skip
+                              }
+                            }
+                          },
+                          child: Container(
+                            height: 520,
+                            width: 340,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(20),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Colors.black.withOpacity(0.3),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 4),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: 32),
-                            ElevatedButton.icon(
-                              onPressed: () => Navigator.push(
-                                context,
-                                MaterialPageRoute(builder: (_) => const Inbox()),
-                              ),
-                              icon: const Icon(Icons.favorite),
-                              label: const Text('View Your Matches'),
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.white,
-                                foregroundColor: const Color(0xFFFF3131),
-                                padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
-                                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-                              ),
-                            ),
-                          ],
-                        )
-                      : Container(
-                          height: 520,
-                          width: 340,
-                          decoration: BoxDecoration(
-                            color: Colors.white,
-                            borderRadius: BorderRadius.circular(20),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withOpacity(0.3),
-                                blurRadius: 8,
-                                offset: const Offset(0, 4),
-                              ),
-                            ],
+                            child: _buildProfileCard(),
                           ),
-                          child: _buildProfileCard(),
                         ),
                 ),
               ),
@@ -228,6 +216,39 @@ class _MatchScreenState extends State<MatchScreen> {
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildNoMatchesView() {
+    return Column(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: [
+        const Icon(Icons.favorite_border, color: Colors.white, size: 64),
+        const SizedBox(height: 16),
+        const Text(
+          'There are no matches left',
+          style: TextStyle(
+            fontSize: 24,
+            fontWeight: FontWeight.bold,
+            color: Colors.white,
+          ),
+        ),
+        const SizedBox(height: 32),
+        ElevatedButton.icon(
+          onPressed: () => Navigator.push(
+            context,
+            MaterialPageRoute(builder: (_) => const Inbox()),
+          ),
+          icon: const Icon(Icons.favorite),
+          label: const Text('View Your Matches'),
+          style: ElevatedButton.styleFrom(
+            backgroundColor: Colors.white,
+            foregroundColor: const Color(0xFFFF3131),
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+          ),
+        ),
+      ],
     );
   }
 
