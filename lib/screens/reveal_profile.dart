@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../services/storage_service.dart';
 import 'dart:convert';
 import 'dart:typed_data';
+import 'photo_viewer_screen.dart';
 
 class RevealProfileScreen extends StatefulWidget {
   final String userId;
@@ -228,17 +229,36 @@ class _RevealProfileScreenState extends State<RevealProfileScreen> {
                           : Wrap(
                               spacing: 8,
                               children: (_profile!['photos'] as List<dynamic>)
-                                  .map((photo) => Container(
-                                        width: 100,
-                                        height: 100,
-                                        decoration: BoxDecoration(
-                                          borderRadius: BorderRadius.circular(12),
+                                  .map((photo) {
+                                int index = (_profile!['photos'] as List<dynamic>).indexOf(photo);
+                                return GestureDetector(
+                                  onTap: () {
+                                    Navigator.push(
+                                      context,
+                                      MaterialPageRoute(
+                                        builder: (context) => PhotoViewerScreen(
+                                          photos: (_profile!['photos'] as List<dynamic>).cast<String>(),
+                                          initialIndex: index,
                                         ),
-                                        child: Image.memory(
-                                          base64Decode(photo.toString()),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ))
+                                      ),
+                                    );
+                                  },
+                                  child: Container(
+                                    width: 100,
+                                    height: 100,
+                                    decoration: BoxDecoration(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    child: Hero(
+                                      tag: photo.toString(),
+                                      child: Image.memory(
+                                        base64Decode(photo.toString()),
+                                        fit: BoxFit.cover,
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              })
                                   .toList(),
                             ),
                     ],

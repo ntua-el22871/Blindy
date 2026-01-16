@@ -44,6 +44,26 @@ class StorageService {
         'interests': ['Coffee', 'Music'],
       };
       await _box.put('profiles', profiles);
+
+      // Dummy accounts like all new users
+      final likes = Map<String, dynamic>.from(_box.get('likes', defaultValue: {}));
+      if (profiles.containsKey('alice')) {
+        if (!likes.containsKey('alice')) likes['alice'] = [];
+        final aliceLikes = List.from(likes['alice']);
+        if (!aliceLikes.contains(username)) {
+          aliceLikes.add(username);
+          likes['alice'] = aliceLikes;
+        }
+      }
+      if (profiles.containsKey('bob')) {
+        if (!likes.containsKey('bob')) likes['bob'] = [];
+        final bobLikes = List.from(likes['bob']);
+        if (!bobLikes.contains(username)) {
+          bobLikes.add(username);
+          likes['bob'] = bobLikes;
+        }
+      }
+      await _box.put('likes', likes);
       
       return true;
     } catch (e) {
@@ -153,6 +173,19 @@ class StorageService {
       likes[currentUser] = userLikes;
       await _box.put('likes', likes);
       print("$currentUser LIKED $targetId");
+
+      // Special handling for dummy accounts: auto-enable reveal on match
+      if (checkMatch(targetId) && (targetId == 'alice' || targetId == 'bob')) {
+        final conversationKey = _getChatKey(currentUser, targetId);
+        final reveals = Map<String, dynamic>.from(_box.get('reveals', defaultValue: {}));
+        reveals[conversationKey] = [currentUser, targetId];
+        await _box.put('reveals', reveals);
+        print("Auto-enabled reveal for $currentUser and $targetId");
+
+        // Send auto hello message from the dummy account
+        await sendMessage(currentUser, "Hello! I'm ${targetId == 'alice' ? 'Alice' : 'Bob'}! Nice to match with you! 😊", sender: targetId);
+        print("Auto-sent hello message from $targetId to $currentUser");
+      }
     }
   }
 
@@ -206,15 +239,15 @@ class StorageService {
   }
 
   /// Send a message in chat
-  static Future<void> sendMessage(String chatId, String message) async {
-    String? currentUser = getLoggedInUser();
-    if (currentUser == null) return;
+  static Future<void> sendMessage(String chatId, String message, {String? sender}) async {
+    sender ??= getLoggedInUser();
+    if (sender == null) return;
 
     final chats = Map<String, dynamic>.from(_box.get('chats', defaultValue: {}));
-    final conversationKey = _getChatKey(currentUser, chatId);
+    final conversationKey = _getChatKey(sender, chatId);
     
     final messageData = {
-      'sender': currentUser,
+      'sender': sender,
       'text': message,
       'timestamp': DateTime.now().toString(),
     };

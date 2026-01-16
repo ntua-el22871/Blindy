@@ -63,8 +63,22 @@ class _MatchScreenState extends State<MatchScreen> {
             duration: const Duration(seconds: 3),
           ),
         );
+          // Additional notification for new message from dummy accounts
+          if (currentProfile['id'] == 'alice' || currentProfile['id'] == 'bob') {
+            Future.delayed(const Duration(seconds: 1), () {
+              if (mounted) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text("You have a new message from ${currentProfile['name']}! 💬"),
+                    backgroundColor: Colors.blue,
+                    duration: const Duration(seconds: 2),
+                  ),
+                );
+              }
+            });
+          }
+        }
       }
-    }
 
     setState(() {
       _profiles.removeAt(_currentIndex);
@@ -82,8 +96,6 @@ class _MatchScreenState extends State<MatchScreen> {
       );
     }
   }
-
-  @override
   Widget build(BuildContext context) {
     if (_isLoading) {
       return const Scaffold(

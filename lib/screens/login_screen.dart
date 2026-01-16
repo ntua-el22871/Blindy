@@ -87,7 +87,13 @@ class _LoginScreenState extends State<LoginScreen> {
       'gender': 'Female',
       'location': 'Athens',
       'bio': 'Love coffee and hiking 🏔️',
-      'interests': ['Coffee', 'Hiking', 'Reading']
+      'interests': ['Coffee', 'Hiking', 'Reading'],
+      'attraction': 'Men',
+      'photos': [
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg==', // Red
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', // Blue
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jzyrAAAAAABJRU5ErkJggg=='  // Green
+      ]
     });
 
     await StorageService.updateProfile('bob', {
@@ -97,7 +103,13 @@ class _LoginScreenState extends State<LoginScreen> {
       'gender': 'Male',
       'location': 'Athens',
       'bio': 'Adventure seeker and photographer 📸',
-      'interests': ['Photography', 'Hiking', 'Travel']
+      'interests': ['Photography', 'Hiking', 'Travel'],
+      'attraction': 'Women',
+      'photos': [
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChAI9jzyrAAAAAABJRU5ErkJggg==', // Green
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==', // Blue
+        'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mP8/5+hHgAHggJ/PchI7wAAAABJRU5ErkJggg=='  // Red
+      ]
     });
 
     await StorageService.likeProfile('bob');
