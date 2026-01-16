@@ -1,14 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
-
-// Imports των οθονών σου (Όπως τα είχες)
 import 'screens/login_screen.dart';
 import 'screens/match_screen.dart';
 import 'screens/view_profile.dart';
 import 'screens/credentials.dart';
 import 'screens/profcreat_quiz.dart';
 import 'screens/sign_up_screen.dart';
-// import 'screens/inbox.dart'; // Αν χρειαστείς route και για το inbox
 
 void main() async {
   // Εξασφαλίζουμε ότι τα Widgets έχουν φορτώσει
